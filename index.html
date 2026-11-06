@@ -154,7 +154,7 @@ renderTimeline();renderAll();
 /* Role-based prototype layer. All records remain in this browser's local storage. */
 const AUTH_KEY="cpActivationUsers_v1";
 let authUsers=JSON.parse(localStorage.getItem(AUTH_KEY)||"null")||[
- {id:"admin-pranay",name:"Pranay",role:"Admin",pin:"1234"}
+ {id:"admin-pranay",name:"Pranay",role:"Admin",pin:"7713"}
 ];
 let currentUser=null;
 function saveUsers(){localStorage.setItem(AUTH_KEY,JSON.stringify(authUsers))}
