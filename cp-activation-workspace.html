@@ -81,6 +81,7 @@ let db=JSON.parse(localStorage.getItem("cpActivationDB")||'{"partners":[],"activ
 db.meetings=db.meetings||[];
 if(localStorage.getItem("cpPrateekContactedMigration")!=="done"){db.partners.forEach(p=>{if(String(p.owner||"").trim().toLowerCase()==="prateek")p.status="Contacted"});localStorage.setItem("cpActivationDB",JSON.stringify(db));localStorage.setItem("cpPrateekContactedMigration","done");}
 if(localStorage.getItem("cpPrateekJasjeetNewMigration")!=="done"){db.partners.forEach(p=>{const owner=String(p.owner||"").trim().toLowerCase();if(owner==="prateek"||owner==="jasjeet")p.status="New"});localStorage.setItem("cpActivationDB",JSON.stringify(db));localStorage.setItem("cpPrateekJasjeetNewMigration","done");}
+if(localStorage.getItem("cpNextDayFollowupMigration")!=="done"){db.partners.forEach(p=>{p.nextDate=plus(1)});localStorage.setItem("cpActivationDB",JSON.stringify(db));localStorage.setItem("cpNextDayFollowupMigration","done");}
 function save(){localStorage.setItem("cpActivationDB",JSON.stringify(db));renderAll()}
 function esc(s=""){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function dateLabel(d){if(!d)return"Not set";return new Date(d+"T00:00:00").toLocaleDateString("en-IN",{day:"numeric",month:"short"})}
@@ -133,7 +134,7 @@ document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",
 function openAdd(){document.getElementById("cpForm").reset();document.getElementById("cpId").value="";document.getElementById("modalTitle").textContent="Add channel partner";document.getElementById("nextDate").value=plus(1);document.getElementById("lastTouch").value=today();document.getElementById("cpModal").classList.add("show")}
 function closeModal(){document.getElementById("cpModal").classList.remove("show")}
 function editCP(id){let p=db.partners.find(x=>x.id===id);if(!p)return;openAdd();document.getElementById("modalTitle").textContent="Update channel partner";Object.keys(p).forEach(k=>{let el=document.getElementById(k);if(el)el.value=p[k]??""});document.getElementById("cpId").value=id}
-document.getElementById("cpForm").addEventListener("submit",e=>{e.preventDefault();let id=document.getElementById("cpId").value;let p={};["name","company","reraName","phone","market","owner","priority","status","budget","clientType","requirements","lastTouch","nextDate","notes","nextAction"].forEach(k=>p[k]=document.getElementById(k).value);if(id){let old=db.partners.find(x=>x.id===id);Object.assign(old,p)}else{p.id=crypto.randomUUID();db.partners.push(p)}closeModal();save()});
+document.getElementById("cpForm").addEventListener("submit",e=>{e.preventDefault();let id=document.getElementById("cpId").value;let p={};["name","company","reraName","phone","market","owner","priority","status","budget","clientType","requirements","lastTouch","nextDate","notes","nextAction"].forEach(k=>p[k]=document.getElementById(k).value);if(id){let old=db.partners.find(x=>x.id===id);Object.assign(old,p)}else{p.id=crypto.randomUUID();if(!p.nextDate)p.nextDate=plus(1);db.partners.push(p)}closeModal();save()});
 function deleteCP(id){let p=db.partners.find(x=>x.id===id);if(confirm(`Delete ${p?.name||"this CP"}? This also removes it from this browser's workspace.`)){db.partners=db.partners.filter(x=>x.id!==id);save()}}
 function logOpen(id){let p=db.partners.find(x=>x.id===id);if(!p)return;document.getElementById("logForm").reset();document.getElementById("logId").value=id;document.getElementById("logNext").value=p.nextDate||plus(3);document.getElementById("logModal").classList.add("show")}
 function closeLog(){document.getElementById("logModal").classList.remove("show")}
@@ -161,6 +162,7 @@ async function importMeetingFile(){
    const rera=String(getCell(row,["RERA Reg.Name of CP/Broker","RERA Registered Name","RERA Name","RERA Reg Name","Registered Name"])||"").trim();
    const phone=String(getCell(row,["Contact Number","Phone Number","Mobile Number","CP Contact Number","Phone","Mobile"])||"").trim();
    const client=String(getCell(row,["Client Name","Customer Name","Buyer Name"])||"").trim();
+   const importedStatus=String(getCell(row,["Status","CP Status","Partner Status"])||"").trim();
    const owner=String(getCell(row,["Team Member","Owner","Assigned To"])||currentUser?.name||"Pranay").trim();
    const rawDate=getCell(row,["Meeting Date","Date"]);let meetingDate=today();
    if(rawDate instanceof Date&&!isNaN(rawDate))meetingDate=rawDate.toISOString().slice(0,10);
@@ -168,8 +170,8 @@ async function importMeetingFile(){
    else if(String(rawDate).trim()){const d=new Date(rawDate);if(!isNaN(d))meetingDate=d.toISOString().slice(0,10)}
    const notes=String(getCell(row,["Meeting Notes","Notes","Remarks","Discussion"])||"").trim();
    let p=db.partners.find(x=>String(x.name||"").trim().toLowerCase()===cpName.toLowerCase());
-   if(!p){p={id:crypto.randomUUID(),name:cpName,company:"",reraName:rera,phone,market:"",owner,priority:"B - Develop",status:"Meeting Done",budget:"",clientType:"Not assessed",requirements:client?1:0,lastTouch:meetingDate,nextDate:plus(3),notes,nextAction:client?"Follow up on client requirement":"Ask for a client requirement"};db.partners.push(p);created++}
-   else{if(rera)p.reraName=rera;if(phone)p.phone=phone;p.lastTouch=meetingDate;if(client)p.requirements=Math.max(1,Number(p.requirements)||0);if(p.status==="New"||p.status==="Contacted")p.status="Meeting Done"}
+   if(!p){p={id:crypto.randomUUID(),name:cpName,company:"",reraName:rera,phone,market:"",owner,priority:"B - Develop",status:importedStatus||"Meeting Done",budget:"",clientType:"Not assessed",requirements:client?1:0,lastTouch:meetingDate,nextDate:plus(1),notes,nextAction:client?"Follow up on client requirement":"Ask for a client requirement"};db.partners.push(p);created++}
+   else{if(rera)p.reraName=rera;if(phone)p.phone=phone;if(importedStatus)p.status=importedStatus;p.lastTouch=meetingDate;if(client)p.requirements=Math.max(1,Number(p.requirements)||0);if(p.status==="New"||p.status==="Contacted")p.status="Meeting Done"}
    db.meetings.push({id:crypto.randomUUID(),cpId:p.id,cpName:p.name,reraName:rera||p.reraName||"",phone:phone||p.phone||"",clientName:client,owner,date:meetingDate,notes});
    db.activity.push({id:crypto.randomUUID(),cpId:p.id,name:p.name,type:"Meeting",notes:client?"Met with CP; client introduced: "+client:(notes||"CP meeting recorded from Excel import"),date:meetingDate});
    if(client){db.activity.push({id:crypto.randomUUID(),cpId:p.id,name:p.name,type:"Client lead",notes:"Client introduced by CP: "+client,date:meetingDate});withClients++}
@@ -179,7 +181,7 @@ async function importMeetingFile(){
  }catch(e){status.textContent="Import failed: "+e.message}
 }
 function downloadMeetingTemplate(){
- const rows=[["Channel Partner Name","RERA Reg.Name of CP/Broker","Contact Number","Client Name","Meeting Date","Team Member","Meeting Notes"],["ABC Realty","ABC Realty Private Limited","9876543210","Rahul Sharma","2026-11-06","Jasjeet","Met at CP office; interested in premium 4 BHK buyers."],["XYZ Properties","XYZ Properties","9876501234","","2026-11-06","Prateek","Introductory meeting; follow up next week."]];
+ const rows=[["Channel Partner Name","RERA Reg.Name of CP/Broker","Contact Number","Status","Client Name","Meeting Date","Team Member","Meeting Notes"],["ABC Realty","ABC Realty Private Limited","9876543210","New","Rahul Sharma","2026-11-06","Jasjeet","Met at CP office; interested in premium 4 BHK buyers."],["XYZ Properties","XYZ Properties","9876501234","Contacted","","2026-11-06","Prateek","Introductory meeting; follow up next week."]];
  const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\n");
  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="CP_Meeting_Import_Template.csv";a.click();URL.revokeObjectURL(a.href)
 }
