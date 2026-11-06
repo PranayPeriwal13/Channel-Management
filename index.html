@@ -130,9 +130,8 @@ function renderActions(){
  document.getElementById("actionQueue").innerHTML=ps.length?ps.map(p=>`<div class="action-card"><div class="split"><h3>${esc(p.reraName||p.name)} · ${esc(p.owner)}</h3><span class="sub">Contact Person: ${esc(p.name)}</span><span class="pill ${daysFromNow(p.nextDate)<0?"red":daysFromNow(p.nextDate)===0?"amber":"blue"}">${daysFromNow(p.nextDate)<0?"Overdue":daysFromNow(p.nextDate)===0?"Due today":"Upcoming"}</span></div><p><b>Do now:</b> ${esc(recommend(p))}</p><p class="hint">Next follow-up: ${dateLabel(p.nextDate)} · ${esc(p.market||"Market not captured")}</p><div class="row"><button class="smallbtn" onclick="logOpen('${p.id}')">Log what happened</button><button class="smallbtn" onclick="editCP('${p.id}')">Update plan</button></div></div>`).join(""):'<div class="empty">Nothing in the queue. Add CPs or update follow-up dates.</div>';
 }
 function renderTeam(){
- document.getElementById("teamCards").innerHTML=TEAM.map(t=>{let ps=db.partners.filter(p=>p.owner===t);return `<div class="card teamcard"><div class="split"><h3>${t}</h3><span class="pill">${ps.length} assigned CPs</span></div><div class="big">${ps.filter(p=>p.status==="Active").length} <span class="muted" style="font-size:12px">active</span></div><p class="hint">${ps.filter(p=>daysFromNow(p.nextDate)<=0&&p.status!=="Converted").length} follow-ups due · ${ps.filter(p=>p.status==="Converted").length} converted</p><div class="progress"><i style="width:${ps.length?ps.filter(p=>p.status==="Active"||p.status==="Converted").length/ps.length*100:0}%"></i></div></div>`}).join("");
  const rows=[...db.partners].sort((a,b)=>String(a.reraName||"").localeCompare(String(b.reraName||"")));
- document.getElementById("teamOwnershipRows").innerHTML=rows.map(p=>`<tr><td><strong>${esc(p.reraName||"Not added")}</strong></td><td>${esc(p.name||"")}</td><td>${esc(p.phone||"—")}</td><td><select onchange="changeCPOwner('${p.id}',this.value)"><option value="">Unassigned</option>${TEAM.map(t=>`<option value="${t}" ${p.owner===t?"selected":""}>${t}</option>`).join("")}</select></td><td>${statusPill(p.status)}</td><td>${dateLabel(p.nextDate)}</td></tr>`).join("")||'<tr><td colspan="6" class="empty">No channel partners added yet.</td></tr>';
+ document.getElementById("teamOwnershipRows").innerHTML=rows.map(p=>`<tr><td><strong>${esc(p.reraName||"Not added")}</strong></td><td>${esc(p.name||"")}</td><td>${esc(p.phone||"—")}</td><td><select onchange="changeCPOwner('${p.id}',this.value)"><option value="">Unassigned</option>${TEAM.map(t=>`<option value="${t}" ${p.owner===t?"selected":""}>${t}</option>`).join("")}</select></td><td>${statusPill(p.status)}</td><td>${dateLabel(p.nextDate)}</td><td>${esc(p.notes||"—")}</td></tr>`).join("")||'<tr><td colspan="6" class="empty">No channel partners added yet.</td></tr>';
 }
 function changeCPOwner(id,owner){const p=db.partners.find(x=>x.id===id);if(!p)return;p.owner=owner;save();document.getElementById("teamOwnershipStatus").textContent="Ownership updated for "+(p.reraName||p.name)+"."; }
 async function downloadTeamOwnershipSheet(){
@@ -325,7 +324,6 @@ renderTeam=function(){
  if(!currentUser)return;
  if(isAdmin()){baseRenderTeam();return}
  const all=db.partners;db.partners=scopedPartners();baseRenderTeam();db.partners=all;
- document.getElementById("teamCards").innerHTML=`<div class="card teamcard"><h3>My CP portfolio</h3><div class="big">${db.partners.filter(p=>p.owner===currentUser.name).length} <span class="muted" style="font-size:12px">assigned CPs</span></div><p class="hint">You can view and manage only your assigned partners.</p></div>`;
 };
 // Team members can only assign new CPs to themselves.
 const baseEditCP=editCP;
