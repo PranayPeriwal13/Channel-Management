@@ -15,7 +15,7 @@
  <div class="top-actions"><button class="ghost" onclick="exportCSV()">Export CSV</button><button class="ghost" onclick="downloadBackup()">Backup data</button><button class="primary" onclick="openAdd()">＋ Add Channel Partner</button></div>
 </header>
 <nav class="tabs">
- <button class="active" data-tab="dashboard">Dashboard</button><button data-tab="partners">CP Directory</button><button data-tab="actions">Today's Actions</button><button data-tab="team">Team & Targets</button><button data-tab="guide">Activation Playbook</button><button data-tab="insights">Meetings & Insights</button>
+ <button class="active" data-tab="dashboard">Dashboard</button><button data-tab="partners">CP Directory</button><button data-tab="actions">Today's Actions</button><button data-tab="team">Team & Targets</button><button data-tab="guide">Activation Playbook</button><button data-tab="logmeeting">Log a Meeting</button><button data-tab="meetingreport">Meetings Report</button>
 </nav>
 <section id="dashboard" class="view active">
  <div class="grid stats" id="stats"></div>
@@ -56,23 +56,27 @@
   <div class="table-wrap"><table><thead><tr><th>RERA Name</th><th>Contact Person</th><th>Phone Number</th><th>CP Owner</th><th>Status</th><th>Next Follow-up</th><th>Notes / Remarks</th></tr></thead><tbody id="teamOwnershipRows"></tbody></table></div>
  </div>
 </section>
-<section id="insights" class="view">
- <div class="section-title"><div><h2>Meetings & outcomes</h2><span class="hint">A meeting is not complete until its outcome, client opportunity and next commitment are recorded.</span></div></div>
- <div class="card"><div class="section-title"><div><h2>Log a meeting / field interaction</h2><span class="hint">Use this for CP meetings, client meetings, site visits and bookings.</span></div></div>
- <div class="formgrid"><div><label>Channel Partner *</label><select id="quickMeetingCP"><option value="">Select CP</option></select></div><div><label>Team member *</label><select id="quickMeetingOwner"><option>Jasjeet</option><option>Prateek</option><option>Naman</option><option>Pranay</option></select></div><div><label>Activity type</label><select id="quickMeetingType"><option>Meeting</option><option>Client lead</option><option>Client meeting</option><option>Site visit</option><option>Booking</option><option>Call</option></select></div><div><label>Outcome</label><select id="quickMeetingOutcome"><option>Meeting completed</option><option>Interested</option><option>Client introduced</option><option>Next meeting fixed</option><option>Not interested</option><option>Follow-up required</option><option>Booking confirmed</option></select></div><div><label>Meeting date</label><input type="date" id="quickMeetingDate"></div><div><label>Client name / requirement</label><input id="quickMeetingClient" placeholder="Client name, budget or requirement"></div><div><label>Next follow-up date</label><input type="date" id="quickMeetingNext"></div><div><label>Next committed action</label><input id="quickMeetingAction" placeholder="Send inventory, arrange site visit..."></div></div>
- <div style="margin-top:10px"><label>Meeting notes / objection / commitment</label><textarea id="quickMeetingNotes" rows="3" placeholder="What did the CP/client say? What was agreed?"></textarea></div><button class="primary" style="margin-top:12px" onclick="saveQuickMeeting()">Save interaction</button><p id="quickMeetingStatus" class="hint"></p></div>
- <div class="card" style="margin-top:14px"><div class="section-title"><div><h2>Import meeting register</h2><span class="hint">Upload your existing Excel / CSV register. Keep the sample column names for accurate matching.</span></div><span class="pill green">Excel import</span></div>
-  <div class="notice">Required columns: Channel Partner Name and RERA Reg.Name of CP/Broker. Add Contact Number for the CP; Client Name, Meeting Date, Team Member and Meeting Notes are optional. If a CP is not already in your directory, the import will create a basic CP record.</div>
-  <div class="row" style="margin-top:12px;align-items:center"><input id="meetingFile" type="file" accept=".xlsx,.xls,.csv" style="max-width:360px"><button class="primary" onclick="importMeetingFile()">Upload Excel / CSV</button><button class="ghost" onclick="downloadMeetingTemplate()">Download sample sheet</button></div>
-  <p id="meetingImportStatus" class="hint">Your original Excel file is not changed. Review the imported meeting records below.</p>
- </div>
- <div class="grid four" id="insightSummary" style="margin-top:14px"></div><div class="card" style="margin-top:14px"><div class="section-title"><div><h2>Funnel health & management diagnosis</h2><span class="hint">Identify where CP relationships stop progressing and intervene early.</span></div></div><div id="funnelDiagnosis"></div></div>
- <div class="grid two" style="margin-top:14px"><div class="card"><div class="section-title"><h2>Next Best Actions</h2></div><div class="table-wrap"><table><thead><tr><th>RERA Name</th><th>Contact Person</th><th>Owner</th><th>Status</th><th>Recommended Action</th><th>Next Follow-up</th><th>Notes / Remarks</th></tr></thead><tbody id="nbaRows"></tbody></table></div></div><div class="card"><div class="section-title"><h2>Dormant CP Recovery</h2></div><div class="table-wrap"><table><thead><tr><th>RERA Name</th><th>Contact Person</th><th>Owner</th><th>Status</th><th>Days Inactive</th><th>Last Contact</th><th>Notes / Remarks</th></tr></thead><tbody id="dormantRows"></tbody></table></div></div></div>
- <div class="card" style="margin-top:14px"><div class="section-title"><h2>CP Conversion Funnel</h2></div><div class="table-wrap"><table><thead><tr><th>Stage</th><th>CP / Activity Count</th><th>Share of Total CPs</th></tr></thead><tbody id="funnelRows"></tbody></table></div></div>
- <div class="card" style="margin-top:14px"><div class="section-title"><h2>Team Performance Scorecard</h2><span class="hint">Last 7 days</span></div><div class="table-wrap"><table><thead><tr><th>Team member</th><th>CP meetings</th><th>Client leads</th><th>Client meetings</th><th>Site visits</th><th>Bookings</th><th>Active CPs</th></tr></thead><tbody id="scorecardRows"></tbody></table></div></div>
- <div class="card" style="margin-top:14px"><div class="section-title"><h2>Imported Meeting History</h2></div><div class="table-wrap"><table><thead><tr><th>Date</th><th>RERA Name</th><th>Contact Person</th><th>Contact Number</th><th>Client name</th><th>Owner</th><th>Notes</th></tr></thead><tbody id="meetingRows"></tbody></table></div></div>
-</section>
-<section id="guide" class="view">
+<section id="logmeeting" class="view">
+ <div class="section-title"><div><h2>Log a Meeting</h2><span class="hint">Record the CP interaction, outcome and next commitment.</span></div></div>
+ <div class="card"><div class="formgrid">
+ <div><label>Search channel partner *</label><input id="quickMeetingSearch" placeholder="Type RERA name, contact person or phone..." autocomplete="off" oninput="searchMeetingCP()"><input type="hidden" id="quickMeetingCP"><div id="meetingCPSuggestions" class="cp-search-results"></div><p id="selectedMeetingCP" class="hint">No channel partner selected.</p></div>
+ <div><label>Team member *</label><select id="quickMeetingOwner"><option>Jasjeet</option><option>Prateek</option><option>Naman</option><option>Pranay</option></select></div>
+ <div><label>Activity type</label><select id="quickMeetingType"><option>Meeting</option><option>Client lead</option><option>Client meeting</option><option>Site visit</option><option>Booking</option><option>Call</option></select></div>
+ <div><label>Outcome</label><select id="quickMeetingOutcome"><option>Meeting completed</option><option>Interested</option><option>Client introduced</option><option>Next meeting fixed</option><option>Not interested</option><option>Follow-up required</option><option>Booking confirmed</option></select></div>
+ <div><label>Meeting date</label><input type="date" id="quickMeetingDate"></div><div><label>Client name / requirement</label><input id="quickMeetingClient" placeholder="Client name, budget or requirement"></div>
+ <div><label>Next follow-up date</label><input type="date" id="quickMeetingNext"></div><div><label>Next committed action</label><input id="quickMeetingAction" placeholder="Send inventory, arrange site visit..."></div></div>
+ <div style="margin-top:10px"><label>Meeting notes / objection / commitment</label><textarea id="quickMeetingNotes" rows="4" placeholder="What did the CP/client say? What was agreed?"></textarea></div>
+ <div class="row" style="margin-top:12px"><button class="primary" onclick="saveQuickMeeting()">Save meeting</button><button class="ghost" onclick="resetMeetingForm()">Clear form</button></div><p id="quickMeetingStatus" class="hint"></p></div>
+ </section>
+ <section id="meetingreport" class="view">
+ <div class="section-title"><div><h2>Meetings Report</h2><span class="hint">A clean register of recorded meetings and their outcomes.</span></div><button class="ghost" onclick="exportMeetingsReport()">Export report CSV</button></div>
+ <div class="card"><div class="row" style="flex-wrap:wrap"><input id="meetingReportSearch" placeholder="Search CP, RERA name, client, owner or notes..." oninput="renderMeetingReport()"><select id="meetingReportOwner" onchange="renderMeetingReport()"><option value="">All team members</option><option>Jasjeet</option><option>Prateek</option><option>Naman</option><option>Pranay</option></select><input id="meetingReportFrom" type="date" onchange="renderMeetingReport()"><input id="meetingReportTo" type="date" onchange="renderMeetingReport()"></div>
+ <p id="meetingReportCount" class="hint"></p><div class="table-wrap"><table><thead><tr><th>Date</th><th>RERA Name</th><th>Contact Person</th><th>Phone</th><th>Activity</th><th>Client / Requirement</th><th>Owner</th><th>Outcome / Notes</th><th>Next Follow-up</th><th>Next Action</th></tr></thead><tbody id="meetingRows"></tbody></table></div></div>
+ <div class="card" style="margin-top:14px"><div class="section-title"><div><h2>Import meeting register</h2><span class="hint">Upload your existing Excel / CSV register.</span></div><span class="pill green">Excel import</span></div>
+ <div class="notice">Required: Channel Partner Name and RERA Reg.Name of CP/Broker. Contact Number, Client Name, Meeting Date, Team Member and Meeting Notes are optional.</div>
+ <div class="row" style="margin-top:12px;align-items:center"><input id="meetingFile" type="file" accept=".xlsx,.xls,.csv" style="max-width:360px"><button class="primary" onclick="importMeetingFile()">Upload Excel / CSV</button><button class="ghost" onclick="downloadMeetingTemplate()">Download sample sheet</button></div><p id="meetingImportStatus" class="hint">Imported records will appear in this report.</p></div>
+ </section>
+ <section id="guide" class="view">
  <div class="grid two">
   <div class="card"><h2>5-stage CP activation system</h2><div class="action-card"><h3>1. Connect</h3><p>Call within 24 hours. Introduce yourself, check interest and ask for a short meeting.</p></div><div class="action-card"><h3>2. Understand</h3><p>Learn locations, client budget, end-user/investor mix, active requirements and current business.</p></div><div class="action-card"><h3>3. Activate</h3><p>Explain location, product, pricing, payment plan, USPs, inventory and commission process.</p></div><div class="action-card"><h3>4. Generate first lead</h3><p>Ask for a specific client requirement. Example: “Do you have anyone looking for a 4 BHK in the ₹6–8 Cr range?”</p></div><div class="action-card"><h3>5. Convert</h3><p>Arrange presentation, site visit, objection handling, negotiation and timely CP updates.</p></div></div>
   <div class="card"><h2>30-day follow-up rhythm</h2><div id="timeline"></div><div class="notice">Use judgement: if a CP asks for a different follow-up date, respect that commitment. Avoid repetitive “any leads?” messages; share a useful reason to reconnect.</div><h2 style="margin-top:22px">Qualification questions</h2><ol class="muted"><li>Which locations do you primarily operate in?</li><li>What is your average client budget?</li><li>Do you work with end users, investors or both?</li><li>How many active clients are you handling?</li><li>What configurations are your clients seeking?</li></ol></div>
@@ -244,36 +248,50 @@ function downloadMeetingTemplate(){
  const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\n");
  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="CP_Meeting_Import_Template.csv";a.click();URL.revokeObjectURL(a.href)
 }
-function renderInsights(){
- const visibleIds=new Set(db.partners.map(p=>p.id)),meetings=(db.meetings||[]).filter(m=>visibleIds.has(m.cpId)).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))),acts=db.activity.filter(a=>visibleIds.has(a.cpId)),total=db.partners.length;
- const last7=acts.filter(a=>a.date>=plus(-6)),count=t=>last7.filter(a=>a.type===t).length;
- const active=db.partners.filter(p=>p.status==="Active").length,leads=count("Client lead"),visits=count("Site visit"),bookings=count("Booking")+count("Booking confirmed");
- document.getElementById("insightSummary").innerHTML=[["Meetings · 7 days",last7.filter(a=>a.type==="Meeting").length,"CP conversations logged"],["Client leads · 7 days",leads,"Introductions generated"],["Site visits · 7 days",visits,"Physical conversion steps"],["Bookings · 7 days",bookings,"Closed outcomes"]].map(x=>'<div class="card stat"><small>'+x[0]+'</small><strong>'+x[1]+'</strong><span>'+x[2]+'</span></div>').join("");
- const unassigned=db.partners.filter(p=>!p.owner).length,noNext=db.partners.filter(p=>p.status!=="Converted"&&!p.nextDate).length,stale=db.partners.filter(p=>p.status!=="Converted"&&daysFromNow(p.lastTouch||p.nextDate)<=-15).length,meetingNoNext=meetings.filter(m=>!m.nextDate).length;
- let diagnoses=[];if(unassigned)diagnoses.push(unassigned+' CPs have no owner. Assign each one before the next team review.');if(noNext)diagnoses.push(noNext+' open CPs have no next follow-up date. This creates invisible pipeline leakage.');if(stale)diagnoses.push(stale+' CPs have had no contact for 15+ days. Assign a recovery action and deadline.');if(!leads&&last7.length)diagnoses.push('No client introductions logged in the last 7 days. Coach the team to ask every qualified CP for one named requirement.');if(leads&&!visits)diagnoses.push('Client leads are not progressing to site visits. Review budget fit, urgency and presentation follow-up.');if(!diagnoses.length)diagnoses.push('No major data gaps detected. Review owner-wise conversion and ensure every active requirement has a next commitment.');
- document.getElementById("funnelDiagnosis").innerHTML='<ul>'+diagnoses.map(x=>'<li style="margin:8px 0">'+esc(x)+'</li>').join("")+'</ul>';
- const due=sorted();document.getElementById("nbaRows").innerHTML=due.map(p=>'<tr><td><strong>'+esc(p.reraName||p.name)+'</strong></td><td>'+esc(p.name)+'</td><td>'+esc(p.owner||"Unassigned")+'</td><td>'+statusPill(p.status)+'</td><td>'+esc(recommend(p))+'</td><td>'+dateLabel(p.nextDate)+'</td><td>'+esc(p.notes||"—")+'</td></tr>').join("")||'<tr><td colspan="7" class="empty">No channel partners added yet.</td></tr>';
- const dormant=db.partners.filter(p=>p.status!=="Converted"&&(p.status==="Dormant"||daysFromNow(p.lastTouch||p.nextDate)<=-15)).sort((a,b)=>daysFromNow(a.lastTouch||a.nextDate)-daysFromNow(b.lastTouch||b.nextDate));
- document.getElementById("dormantRows").innerHTML=dormant.map(p=>'<tr><td><strong>'+esc(p.reraName||p.name)+'</strong></td><td>'+esc(p.name)+'</td><td>'+esc(p.owner||"Unassigned")+'</td><td>'+statusPill(p.status)+'</td><td>'+Math.abs(daysFromNow(p.lastTouch||p.nextDate))+'</td><td>'+dateLabel(p.lastTouch)+'</td><td>'+esc(p.notes||"—")+'</td></tr>').join("")||'<tr><td colspan="7" class="empty">No dormant CPs detected.</td></tr>';
- const stages=[["Total CPs",total],["New",db.partners.filter(p=>p.status==="New").length],["Contacted",db.partners.filter(p=>p.status==="Contacted").length],["Meeting Scheduled",db.partners.filter(p=>p.status==="Meeting Scheduled").length],["Meeting Done",db.partners.filter(p=>p.status==="Meeting Done").length],["Active",active],["Dormant",db.partners.filter(p=>p.status==="Dormant").length],["Converted",db.partners.filter(p=>p.status==="Converted").length],["CPs with meeting records",new Set(meetings.map(m=>m.cpId)).size],["CPs with client introductions",new Set(meetings.filter(m=>m.clientName).map(m=>m.cpId)).size],["Client leads · 7 days",leads],["Client meetings · 7 days",count("Client meeting")],["Site visits · 7 days",visits],["Bookings · 7 days",bookings]];
- const denom=Math.max(1,total);document.getElementById("funnelRows").innerHTML=stages.map(x=>'<tr><td>'+esc(x[0])+'</td><td>'+x[1]+'</td><td>'+((x[1]/denom)*100).toFixed(1)+'%</td></tr>').join("");
- const team=["Jasjeet","Prateek","Naman","Pranay"],week=plus(-6);document.getElementById("scorecardRows").innerHTML=team.map(t=>{const ids=new Set(db.partners.filter(p=>p.owner===t).map(p=>p.id)),aa=acts.filter(a=>ids.has(a.cpId)&&a.date>=week),n=type=>aa.filter(a=>a.type===type).length;return '<tr><td>'+t+'</td><td>'+n("Meeting")+'</td><td>'+n("Client lead")+'</td><td>'+n("Client meeting")+'</td><td>'+n("Site visit")+'</td><td>'+n("Booking")+n("Booking confirmed")+'</td><td>'+db.partners.filter(p=>p.owner===t&&p.status==="Active").length+'</td></tr>'}).join("");
- document.getElementById("meetingRows").innerHTML=meetings.map(m=>'<tr><td>'+dateLabel(m.date)+'</td><td>'+esc(m.reraName||db.partners.find(p=>p.id===m.cpId)?.reraName||"—")+'</td><td>'+esc(m.cpName||db.partners.find(p=>p.id===m.cpId)?.name||"—")+'</td><td>'+esc(m.phone||"—")+'</td><td>'+esc(m.clientName||"—")+'</td><td>'+esc(m.owner||"—")+'</td><td>'+esc(m.notes||"—")+'</td></tr>').join("")||'<tr><td colspan="7" class="empty">No meeting records yet. Log a meeting or import your sheet.</td></tr>';
- const cpSel=document.getElementById("quickMeetingCP");if(cpSel){const chosen=cpSel.value;cpSel.innerHTML='<option value="">Select CP</option>'+db.partners.map(p=>'<option value="'+p.id+'">'+esc(p.reraName||p.name)+' — '+esc(p.name)+'</option>').join("");cpSel.value=chosen}
- const dateEl=document.getElementById("quickMeetingDate");if(dateEl&&!dateEl.value)dateEl.value=today();
+function searchMeetingCP(){
+ const q=(document.getElementById("quickMeetingSearch").value||"").trim().toLowerCase(),box=document.getElementById("meetingCPSuggestions");
+ document.getElementById("quickMeetingCP").value="";document.getElementById("selectedMeetingCP").textContent="No channel partner selected.";
+ if(!q){box.innerHTML="";return}
+ const hits=db.partners.filter(p=>[p.reraName,p.name,p.phone].join(" ").toLowerCase().includes(q)).slice(0,12);
+ box.innerHTML=hits.length?hits.map(p=>'<button type="button" class="cp-search-option" onclick="selectMeetingCP(\''+p.id+'\')"><strong>'+esc(p.reraName||p.name)+'</strong><span>Contact: '+esc(p.name)+' · '+esc(p.phone||"No phone")+'</span></button>').join(""):'<div class="hint" style="padding:10px">No matching CP found. Add the CP in CP Directory first.</div>';
 }
+function selectMeetingCP(id){
+ const p=db.partners.find(x=>x.id===id);if(!p)return;
+ document.getElementById("quickMeetingCP").value=id;document.getElementById("quickMeetingSearch").value=p.reraName||p.name;
+ document.getElementById("selectedMeetingCP").textContent="Selected: "+(p.reraName||p.name)+" · Contact: "+p.name;
+ document.getElementById("meetingCPSuggestions").innerHTML="";
+ if(p.owner)document.getElementById("quickMeetingOwner").value=p.owner;
+}
+function resetMeetingForm(){
+ ["quickMeetingSearch","quickMeetingCP","quickMeetingClient","quickMeetingNext","quickMeetingAction","quickMeetingNotes"].forEach(id=>document.getElementById(id).value="");
+ document.getElementById("quickMeetingDate").value=today();document.getElementById("meetingCPSuggestions").innerHTML="";
+ document.getElementById("selectedMeetingCP").textContent="No channel partner selected.";
+ document.getElementById("quickMeetingStatus").textContent="";
+}
+function renderMeetingReport(){
+ const all=(db.meetings||[]).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+ const q=(document.getElementById("meetingReportSearch")?.value||"").toLowerCase(),owner=document.getElementById("meetingReportOwner")?.value||"",from=document.getElementById("meetingReportFrom")?.value||"",to=document.getElementById("meetingReportTo")?.value||"";
+ const rows=all.filter(m=>{const p=db.partners.find(x=>x.id===m.cpId),hay=[m.reraName,m.cpName,p?.reraName,p?.name,m.phone,m.clientName,m.owner,m.notes,m.outcome,m.type].join(" ").toLowerCase();return (!q||hay.includes(q))&&(!owner||m.owner===owner)&&(!from||m.date>=from)&&(!to||m.date<=to)});
+ document.getElementById("meetingReportCount").textContent="Showing "+rows.length+" of "+all.length+" recorded interactions.";
+ document.getElementById("meetingRows").innerHTML=rows.map(m=>{const p=db.partners.find(x=>x.id===m.cpId);return '<tr><td>'+dateLabel(m.date)+'</td><td><strong>'+esc(m.reraName||p?.reraName||"—")+'</strong></td><td>'+esc(m.cpName||p?.name||"—")+'</td><td>'+esc(m.phone||p?.phone||"—")+'</td><td>'+esc(m.type||"Meeting")+'</td><td>'+esc(m.clientName||"—")+'</td><td>'+esc(m.owner||"—")+'</td><td>'+esc([m.outcome,m.notes].filter(Boolean).join(": ")||"—")+'</td><td>'+dateLabel(m.nextDate)+'</td><td>'+esc(m.nextAction||"—")+'</td></tr>'}).join("")||'<tr><td colspan="10" class="empty">No meetings match these filters.</td></tr>';
+}
+function exportMeetingsReport(){
+ const rows=[["Date","RERA Name","Contact Person","Phone","Activity","Client / Requirement","Owner","Outcome","Notes","Next Follow-up","Next Action"],...(db.meetings||[]).map(m=>{const p=db.partners.find(x=>x.id===m.cpId);return [m.date,m.reraName||p?.reraName||"",m.cpName||p?.name||"",m.phone||p?.phone||"",m.type||"Meeting",m.clientName||"",m.owner||"",m.outcome||"",m.notes||"",m.nextDate||"",m.nextAction||""]})];
+ const csv=rows.map(r=>r.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\n"),a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="Meetings_Report.csv";a.click();URL.revokeObjectURL(a.href);
+}
+
 function saveQuickMeeting(){
- const id=document.getElementById("quickMeetingCP").value,p=db.partners.find(x=>x.id===id);if(!p){document.getElementById("quickMeetingStatus").textContent="Select a channel partner first.";return}
+ const id=document.getElementById("quickMeetingCP").value,p=db.partners.find(x=>x.id===id);if(!p){document.getElementById("quickMeetingStatus").textContent="Search and select a channel partner first.";return}
  const type=document.getElementById("quickMeetingType").value,owner=document.getElementById("quickMeetingOwner").value,date=document.getElementById("quickMeetingDate").value||today(),client=document.getElementById("quickMeetingClient").value.trim(),outcome=document.getElementById("quickMeetingOutcome").value,notes=document.getElementById("quickMeetingNotes").value.trim(),next=document.getElementById("quickMeetingNext").value,action=document.getElementById("quickMeetingAction").value.trim();
  const detail=[outcome,notes].filter(Boolean).join(": ");db.activity.push({id:crypto.randomUUID(),cpId:id,name:p.name,type,notes:detail||outcome,date,owner});p.lastTouch=date;if(next)p.nextDate=next;if(action)p.nextAction=action;if(client)p.requirements=Math.max(1,Number(p.requirements)||0);
  if(type==="Booking"||outcome==="Booking confirmed")p.status="Converted";else if(type==="Site visit"&&p.status!=="Converted")p.status="Active";else if(type==="Client lead"&&p.status!=="Converted")p.status="Active";else if(type==="Meeting"&&p.status==="New")p.status="Meeting Done";
- if(type==="Meeting"||type==="Client meeting"||type==="Site visit"||type==="Booking"){db.meetings.push({id:crypto.randomUUID(),cpId:id,cpName:p.name,reraName:p.reraName||"",phone:p.phone||"",clientName:client,owner,date,notes:detail,nextDate:next,nextAction:action,outcome,type})}
+ db.meetings.push({id:crypto.randomUUID(),cpId:id,cpName:p.name,reraName:p.reraName||"",phone:p.phone||"",clientName:client,owner,date,notes:notes,nextDate:next,nextAction:action,outcome,type});
  save();document.getElementById("quickMeetingStatus").textContent="Saved. "+(p.reraName||p.name)+" updated; next step: "+(action||"add a next action if required")+".";
- document.getElementById("quickMeetingClient").value="";document.getElementById("quickMeetingNotes").value="";document.getElementById("quickMeetingAction").value="";
+ resetMeetingForm();
 }
 
 
-renderTimeline();renderAll();
+renderTimeline();renderAll();renderMeetingReport();
 </script>
 
 <style>
@@ -432,5 +450,9 @@ document.addEventListener("DOMContentLoaded",()=>{
 
 <style>
 #actionSummary,#teamSummary,#insightSummary{grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px}#teamTargetsRows input{max-width:76px;padding:7px}#funnelDiagnosis ul{margin:8px 0;padding-left:22px}#quickMeetingCP,#quickMeetingOwner,#quickMeetingType,#quickMeetingOutcome,#quickMeetingDate,#quickMeetingNext,#quickMeetingClient,#quickMeetingAction{width:100%}
+</style>
+
+<style>
+.cp-search-results{position:relative;z-index:5;max-height:260px;overflow:auto;background:#101b2e;border:1px solid var(--line);border-radius:9px;margin-top:5px}.cp-search-option{display:flex;flex-direction:column;gap:3px;text-align:left;width:100%;padding:10px 12px;background:transparent;color:var(--text);border:0;border-bottom:1px solid var(--line);cursor:pointer}.cp-search-option:hover{background:#22334e}.cp-search-option span{font-size:12px;color:var(--muted)}#meetingreport .row input,#meetingreport .row select{min-width:160px;flex:1}
 </style>
 </body></html>
