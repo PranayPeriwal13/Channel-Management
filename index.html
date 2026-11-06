@@ -284,7 +284,7 @@ function signIn(){
  const u=authUsers.find(x=>x.id===document.getElementById("loginUser").value);
  const pin=document.getElementById("loginPin").value;
  if(!u||u.pin!==pin){document.getElementById("loginError").textContent="Incorrect account or PIN.";return}
- currentUser=u;document.getElementById("accessGate").style.display="none";
+ currentUser=u;if(typeof refreshWaPartners==="function")refreshWaPartners();document.getElementById("accessGate").style.display="none";
  document.getElementById("accountBar").style.display="flex";
  document.getElementById("signedInAs").textContent=`${u.name} · ${u.role}`;
  document.getElementById("teamAdminPanel").style.display=u.role==="Admin"?"block":"none";
@@ -295,6 +295,8 @@ function signIn(){
 function signOut(){currentUser=null;document.getElementById("accessGate").style.display="flex";document.getElementById("accountBar").style.display="none";document.getElementById("loginPin").value="";refreshLoginUsers()}
 function isAdmin(){return currentUser?.role==="Admin"}
 function scopedPartners(){return isAdmin()?db.partners:db.partners.filter(p=>p.owner===currentUser?.name)}
+const saveWithWaRefresh=save;
+save=function(){saveWithWaRefresh();if(typeof refreshWaPartners==="function")refreshWaPartners()};
 function scopedActivity(){return isAdmin()?db.activity:db.activity.filter(a=>{let p=db.partners.find(x=>x.id===a.cpId);return p?.owner===currentUser?.name})}
 const baseRenderAll=renderAll;
 renderAll=function(){
