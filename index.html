@@ -167,6 +167,7 @@ async function importMeetingFile(){
    let p=db.partners.find(x=>String(x.name||"").trim().toLowerCase()===cpName.toLowerCase());
    if(!p){p={id:crypto.randomUUID(),name:cpName,company:"",reraName:rera,phone:"",market:"",owner,priority:"B - Develop",status:"Meeting Done",budget:"",clientType:"Not assessed",requirements:client?1:0,lastTouch:meetingDate,nextDate:plus(3),notes,nextAction:client?"Follow up on client requirement":"Ask for a client requirement"};db.partners.push(p);created++}
    else{if(rera)p.reraName=rera;p.lastTouch=meetingDate;if(client)p.requirements=Math.max(1,Number(p.requirements)||0);if(p.status==="New"||p.status==="Contacted")p.status="Meeting Done"}
+   if(db.meetings.some(m=>m.cpId===p.id&&m.date===meetingDate&&m.clientName===client&&m.notes===notes)){skipped++;return}
    db.meetings.push({id:crypto.randomUUID(),cpId:p.id,cpName:p.name,reraName:rera||p.reraName||"",clientName:client,owner,date:meetingDate,notes});
    db.activity.push({id:crypto.randomUUID(),cpId:p.id,name:p.name,type:"Meeting",notes:client?"Met with CP; client introduced: "+client:(notes||"CP meeting recorded from Excel import"),date:meetingDate});
    if(client){db.activity.push({id:crypto.randomUUID(),cpId:p.id,name:p.name,type:"Client lead",notes:"Client introduced by CP: "+client,date:meetingDate});withClients++}
