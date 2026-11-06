@@ -15,7 +15,7 @@
  <div class="top-actions"><button class="ghost" onclick="exportCSV()">Export CSV</button><button class="ghost" onclick="downloadBackup()">Backup data</button><button class="primary" onclick="openAdd()">＋ Add Channel Partner</button></div>
 </header>
 <nav class="tabs">
- <button class="active" data-tab="dashboard">Dashboard</button><button data-tab="partners">CP Directory</button><button data-tab="actions">Today's Actions</button><button data-tab="team">Team & Targets</button><button data-tab="guide">Activation Playbook</button>
+ <button class="active" data-tab="dashboard">Dashboard</button><button data-tab="partners">CP Directory</button><button data-tab="actions">Today's Actions</button><button data-tab="team">Team & Targets</button><button data-tab="guide">Activation Playbook</button><button data-tab="whatsapp">WhatsApp Studio</button>
 </nav>
 <section id="dashboard" class="view active">
  <div class="grid stats" id="stats"></div>
@@ -48,6 +48,21 @@
   <div class="card"><h2>5-stage CP activation system</h2><div class="action-card"><h3>1. Connect</h3><p>Call within 24 hours. Introduce yourself, check interest and ask for a short meeting.</p></div><div class="action-card"><h3>2. Understand</h3><p>Learn locations, client budget, end-user/investor mix, active requirements and current business.</p></div><div class="action-card"><h3>3. Activate</h3><p>Explain location, product, pricing, payment plan, USPs, inventory and commission process.</p></div><div class="action-card"><h3>4. Generate first lead</h3><p>Ask for a specific client requirement. Example: “Do you have anyone looking for a 4 BHK in the ₹6–8 Cr range?”</p></div><div class="action-card"><h3>5. Convert</h3><p>Arrange presentation, site visit, objection handling, negotiation and timely CP updates.</p></div></div>
   <div class="card"><h2>30-day follow-up rhythm</h2><div id="timeline"></div><div class="notice">Use judgement: if a CP asks for a different follow-up date, respect that commitment. Avoid repetitive “any leads?” messages; share a useful reason to reconnect.</div><h2 style="margin-top:22px">Qualification questions</h2><ol class="muted"><li>Which locations do you primarily operate in?</li><li>What is your average client budget?</li><li>Do you work with end users, investors or both?</li><li>How many active clients are you handling?</li><li>What configurations are your clients seeking?</li></ol></div>
  </div>
+</section>
+<section id="whatsapp" class="view">
+ <div class="card">
+  <div class="section-title"><div><h2>WhatsApp Studio</h2><span class="hint">Choose a CP, choose the moment, then copy a message that sounds natural.</span></div><span class="pill green">3 message options</span></div>
+  <div class="formgrid">
+   <div><label>Choose channel partner</label><select id="waPartner" onchange="renderWaMessages()"></select></div>
+   <div><label>What are you messaging about?</label><select id="waPurpose" onchange="renderWaMessages()">
+    <option value="meeting">Fix a first meeting</option><option value="intro">First WhatsApp introduction</option><option value="call">After a phone call</option><option value="confirm">Confirm a meeting</option><option value="reminder">Meeting reminder</option><option value="postmeeting">After a meeting / presentation</option><option value="details">Share project details</option><option value="lead">Ask for a client requirement</option><option value="sitevisit">Plan a client site visit</option><option value="followup">Follow up on a pending discussion</option><option value="update">Share a useful project update</option><option value="reactivate">Reconnect with an inactive CP</option><option value="thanks">Thank them for a lead or visit</option>
+   </select></div>
+   <div class="full"><label>Optional personal detail (adds context to the message)</label><input id="waContext" placeholder="e.g. You mentioned a family looking for a 4 BHK around ₹7 Cr" oninput="renderWaMessages()"></div>
+  </div>
+  <div class="notice" style="margin-top:14px"><b>Humanizer is on.</b> Messages use short sentences, everyday words and a friendly tone. They avoid stiff sales language and sound like something a person would actually type.</div>
+  <div id="waMessageList" style="margin-top:14px"></div>
+ </div>
+ <div class="card" style="margin-top:14px"><h2>How to use it</h2><p class="muted">Pick the CP and the reason for reaching out. Read all three options, choose the one that feels right, copy it and paste it into your WhatsApp chat. Add a personal line before sending if needed. Always check names, dates, prices and availability before you send.</p></div>
 </section>
 </div>
 <div class="modal" id="cpModal"><div class="modalbox"><button class="close" onclick="closeModal()">✕</button><h2 id="modalTitle">Add channel partner</h2><form id="cpForm"><input type="hidden" id="cpId"><div class="formgrid">
@@ -125,6 +140,105 @@ function closeLog(){document.getElementById("logModal").classList.remove("show")
 document.getElementById("logForm").addEventListener("submit",e=>{e.preventDefault();let id=document.getElementById("logId").value,p=db.partners.find(x=>x.id===id);let type=document.getElementById("logType").value,outcome=document.getElementById("logOutcome").value,notes=document.getElementById("logNotes").value,next=document.getElementById("logNext").value,action=document.getElementById("logNextAction").value;db.activity.push({id:crypto.randomUUID(),cpId:id,name:p.name,type,notes:`${outcome}: ${notes}`,date:today()});p.lastTouch=today();if(next)p.nextDate=next;p.nextAction=action;if(outcome==="Lead received")p.status="Active";if(outcome==="Meeting fixed")p.status="Meeting Scheduled";if(outcome==="Booked"){p.status="Converted"}if(type==="Meeting"&&outcome==="Interested")p.status="Meeting Done";closeLog();save()});
 function exportCSV(){let rows=[["Name","Company","Phone","Market","Owner","Priority","Status","Budget","Client type","Requirements","Last contact","Next follow-up","Next action","Notes"],...db.partners.map(p=>["name","company","phone","market","owner","priority","status","budget","clientType","requirements","lastTouch","nextDate","nextAction","notes"].map(k=>p[k]||""))];let csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\n");let a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="cp-activation-directory.csv";a.click();URL.revokeObjectURL(a.href)}
 function downloadBackup(){let a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:"application/json"}));a.download="cp-activation-backup.json";a.click();URL.revokeObjectURL(a.href)}
+
+const waTemplates={
+ intro:[
+  "Hi {name}, Pranay here from Sobha. Good connecting with you. I look after the team here in Gurgaon. Would be happy to stay in touch and share anything useful for your clients.",
+  "Hello {name}, this is Pranay from Sobha. Just wanted to introduce myself. Let’s connect and see how we can work together whenever you have a suitable client.",
+  "Hi {name}! Pranay this side from Sobha. I wanted to connect with you and understand the kind of property requirements you usually handle. Happy to help whenever you need any details."
+ ],
+ meeting:[
+  "Hi {name}, hope you’re doing well. I wanted to meet you for 15–20 minutes and walk you through what we have at Sobha. Would tomorrow or the day after work for you?",
+  "Hello {name}, I’d like to catch up and understand what your clients are looking for these days. Can we fix a short meeting this week? I can come to your office if that’s easier.",
+  "Hi {name}, thought it would be good to meet in person, share a quick update and understand how we can support your business. Which day would be convenient for you?"
+ ],
+ call:[
+  "Hi {name}, thanks for taking my call. As discussed, let’s connect properly and go through the details. Tell me what time works for you and I’ll plan accordingly.",
+  "Good speaking with you, {name}. I’m sharing a quick message here so you have my number. Whenever you’re free, we can sit together and take this forward.",
+  "Thanks for your time today, {name}. I’ll share the details we discussed. Let me know if you’d like me to explain anything or meet you for a quick discussion."
+ ],
+ confirm:[
+  "Hi {name}, just confirming our meeting for {context}. Looking forward to catching up. Please let me know if the timing needs to change.",
+  "Hello {name}, we’re meeting {context}, right? I’ll keep the details ready. See you then.",
+  "Hi {name}, just checking that our meeting at {context} is still convenient for you. If you need to change the time, no problem—just let me know."
+ ],
+ reminder:[
+  "Hi {name}, just a quick reminder about our meeting today. Looking forward to seeing you. Let me know if you need the location or any details.",
+  "Hello {name}, hope your day is going well. We’re still on for our meeting today, right? See you soon.",
+  "Hi {name}, checking in before we meet. Please message me if you’re running late or need to reschedule."
+ ],
+ postmeeting:[
+  "Hi {name}, thanks for taking the time to meet today. Hope the discussion was useful. Let me know what questions come up and I’ll help with the details.",
+  "Good meeting you, {name}. I’ll share the points we discussed. Let’s stay connected and take it ahead whenever you have a matching client.",
+  "Thanks for the meeting, {name}. It was helpful to understand your business and client profile. Whenever a suitable requirement comes up, call or message me directly."
+ ],
+ details:[
+  "Hi {name}, sharing the project details we discussed. Have a look whenever you get time. If anything is not clear, just call me and I’ll explain it.",
+  "Hello {name}, as promised, I’m sending the information here. You can go through it and tell me what would be useful for your clients.",
+  "Hi {name}, I’ve shared the details for a quick look. If you have a client in mind, send me their basic requirement and we can work out the next step together."
+ ],
+ lead:[
+  "Hi {name}, are you currently handling anyone looking for a home in Gurgaon? If you share the budget and preferred configuration, I can check what may fit.",
+  "Hello {name}, just checking if you have any active clients who may be exploring this segment. Even a basic requirement will help me suggest the right options.",
+  "Hi {name}, whenever you get a suitable client, feel free to share the budget, configuration and timeline. I’ll help you with the options and next steps."
+ ],
+ sitevisit:[
+  "Hi {name}, if your client is comfortable, we can plan a site visit and let them experience the project in person. Which day would work for them?",
+  "Hello {name}, shall we look at a suitable time for your client to visit the site? I can coordinate the visit and make sure someone is available to guide them.",
+  "Hi {name}, a visit may help your client understand the location and the project better. Share their preferred day and time and I’ll arrange it."
+ ],
+ followup:[
+  "Hi {name}, just following up on our last discussion. Have you had a chance to think about it? No rush—let me know if you need anything from my side.",
+  "Hello {name}, checking in to see if there’s any update. If the timing isn’t right, that’s completely fine. Happy to reconnect when it makes sense.",
+  "Hi {name}, wanted to keep the conversation going. Is there anything I can clarify or share that would help you take the next step?"
+ ],
+ update:[
+  "Hi {name}, thought this update might be useful for you and your clients: {context}. Let me know if anyone would like to know more.",
+  "Hello {name}, sharing this because it may be relevant to a client you’re handling: {context}. Happy to explain the details if needed.",
+  "Hi {name}, a quick update from my side: {context}. If this matches anyone’s requirement, we can discuss the options together."
+ ],
+ reactivate:[
+  "Hi {name}, it’s been a while since we last connected. Hope work is going well. Would be nice to catch up and hear what kind of requirements you’re seeing these days.",
+  "Hello {name}, just wanted to reconnect. Let me know if you’re free for a quick call sometime this week. Happy to share any useful updates from our side.",
+  "Hi {name}, hope all is good. I thought I’d check in and see if there’s any way I can support you or your clients at the moment."
+ ],
+ thanks:[
+  "Hi {name}, thank you for sharing the requirement. I appreciate it. I’ll check the details and keep you updated on the next step.",
+  "Thanks, {name}, for bringing your client to the site. Hope the visit was useful. Let’s discuss their feedback and see how we can help them further.",
+  "Hi {name}, really appreciate your support. Thanks for staying involved. I’ll keep you posted and make sure we coordinate the next steps properly."
+ ]
+};
+function renderWaMessages(){
+ const partnerId=document.getElementById("waPartner")?.value;
+ const p=db.partners.find(x=>x.id===partnerId);
+ const purpose=document.getElementById("waPurpose")?.value||"meeting";
+ const extra=(document.getElementById("waContext")?.value||"").trim();
+ const name=p?(p.name||"there").trim().split(/\\s+/)[0]:"there";
+ const context=extra||[p?.budget,p?.market].filter(Boolean).join(" · ")||"a convenient time";
+ const fill=t=>t.replace(/\\{name\\}/g,name).replace(/\\{context\\}/g,context);
+ const list=waTemplates[purpose]||waTemplates.meeting;
+ document.getElementById("waMessageList").innerHTML=list.map((t,i)=>'<div class="action-card"><div class="split"><b>Option '+(i+1)+'</b><button class="primary" onclick="copyWaMessage('+i+')">Copy message</button></div><p id="waText'+i+'" style="white-space:pre-wrap;line-height:1.65">'+esc(fill(t))+'</p></div>').join("");
+}
+function copyWaMessage(index){
+ const p=db.partners.find(x=>x.id===document.getElementById("waPartner").value);
+ const name=p?(p.name||"there").trim().split(/\\s+/)[0]:"there";
+ const extra=(document.getElementById("waContext").value||"").trim();
+ const context=extra||[p?.budget,p?.market].filter(Boolean).join(" · ")||"a convenient time";
+ const purpose=document.getElementById("waPurpose").value;
+ const message=(waTemplates[purpose]||waTemplates.meeting)[index].replace(/\\{name\\}/g,name).replace(/\\{context\\}/g,context);
+ const done=()=>{const b=document.querySelectorAll("#waMessageList .action-card button")[index];if(b){b.textContent="Copied!";setTimeout(()=>b.textContent="Copy message",1400)}};
+ if(navigator.clipboard?.writeText){navigator.clipboard.writeText(message).then(done,()=>prompt("Copy your message:",message))}else prompt("Copy your message:",message);
+}
+function refreshWaPartners(){
+ const el=document.getElementById("waPartner");if(!el)return;
+ const old=el.value;
+ const ps=(typeof scopedPartners==="function"&&currentUser)?scopedPartners():db.partners;
+ el.innerHTML=ps.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+' · '+esc(p.company||p.owner||"CP")+'</option>').join("");
+ if(ps.some(p=>p.id===old))el.value=old;
+ renderWaMessages();
+}
+
+refreshWaPartners();
 renderTimeline();renderAll();
 </script>
 
