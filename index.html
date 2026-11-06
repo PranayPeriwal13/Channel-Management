@@ -32,7 +32,7 @@
  <div class="card">
   <div class="section-title"><h2>Channel partner directory</h2><button class="primary" onclick="openAdd()">＋ Add CP</button></div>
   <div class="toolbar"><input id="search" placeholder="Search name, company, phone…" oninput="renderPartners()"><select id="filterStatus" onchange="renderPartners()"><option value="">All statuses</option><option>New</option><option>Contacted</option><option>Meeting Scheduled</option><option>Meeting Done</option><option>Active</option><option>Dormant</option><option>Converted</option></select><select id="filterOwner" onchange="renderPartners()"><option value="">All owners</option><option>Jasjeet</option><option>Prateek</option><option>Naman</option><option>Pranay</option></select><select id="filterPriority" onchange="renderPartners()"><option value="">All priorities</option><option>A - High Potential</option><option>B - Develop</option><option>C - Nurture</option></select></div>
-  <div class="table-wrap"><table><thead><tr><th>Broker Name / Owner Name</th><th>Priority</th><th>Status</th><th>Last touch</th><th>Next follow-up</th><th>Manage</th></tr></thead><tbody id="partnerRows"></tbody></table></div>
+  <div class="table-wrap"><table><thead><tr><th>Company / CP Name</th><th>Owner / Priority</th><th>Status</th><th>Last touch</th><th>Next follow-up</th><th>Manage</th></tr></thead><tbody id="partnerRows"></tbody></table></div>
  </div>
 </section>
 <section id="actions" class="view">
@@ -79,7 +79,6 @@ const today=()=>new Date().toISOString().slice(0,10);
 const plus=(n)=>{let d=new Date();d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)};
 let db=JSON.parse(localStorage.getItem("cpActivationDB")||'{"partners":[],"activity":[]}');
 db.meetings=db.meetings||[];
-if(!db.prateekContactedMigrationV1){db.partners.filter(p=>p.owner==="Prateek").forEach(p=>p.status="Contacted");db.prateekContactedMigrationV1=true;localStorage.setItem("cpActivationDB",JSON.stringify(db));}
 function save(){localStorage.setItem("cpActivationDB",JSON.stringify(db));renderAll()}
 function esc(s=""){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function dateLabel(d){if(!d)return"Not set";return new Date(d+"T00:00:00").toLocaleDateString("en-IN",{day:"numeric",month:"short"})}
@@ -117,7 +116,7 @@ function renderDashboard(){
 function renderPartners(){
  let q=(document.getElementById("search")?.value||"").toLowerCase(),s=document.getElementById("filterStatus")?.value||"",o=document.getElementById("filterOwner")?.value||"",pr=document.getElementById("filterPriority")?.value||"";
  let ps=sorted().filter(p=>(!q||[p.name,p.company,p.phone,p.market].join(" ").toLowerCase().includes(q))&&(!s||p.status===s)&&(!o||p.owner===o)&&(!pr||p.priority===pr));
- document.getElementById("partnerRows").innerHTML=ps.map(p=>`<tr><td><span class="cpname">${esc(p.name)}</span><span class="sub">Owner: ${esc(p.owner)}</span><span class="sub">${esc(p.company||"")}${p.reraName?" · RERA: "+esc(p.reraName):""}${p.phone?" · "+esc(p.phone):""}</span></td><td>${esc(p.priority)}</td><td>${statusPill(p.status)}</td><td>${dateLabel(p.lastTouch)}</td><td>${dateLabel(p.nextDate)} ${daysFromNow(p.nextDate)<0?'<span class="pill red">Overdue</span>':""}</td><td><div class="row"><button class="smallbtn" onclick="logOpen('${p.id}')">Log</button><button class="smallbtn" onclick="editCP('${p.id}')">Edit</button><button class="smallbtn" onclick="deleteCP('${p.id}')">Delete</button></div></td></tr>`).join("")||'<tr><td colspan="6" class="empty">No matching CPs.</td></tr>';
+ document.getElementById("partnerRows").innerHTML=ps.map(p=>`<tr><td><span class="cpname">${esc(p.company||"Company not added")}</span><span class="sub">CP Name: ${esc(p.name)}</span></td><td>${esc(p.owner)}<span class="sub">${esc(p.priority)}</span></td><td>${statusPill(p.status)}</td><td>${dateLabel(p.lastTouch)}</td><td>${dateLabel(p.nextDate)} ${daysFromNow(p.nextDate)<0?'<span class="pill red">Overdue</span>':""}</td><td><div class="row"><button class="smallbtn" onclick="logOpen('${p.id}')">Log</button><button class="smallbtn" onclick="editCP('${p.id}')">Edit</button><button class="smallbtn" onclick="deleteCP('${p.id}')">Delete</button></div></td></tr>`).join("")||'<tr><td colspan="6" class="empty">No matching CPs.</td></tr>';
 }
 function renderActions(){
  let ps=sorted().filter(p=>p.status!=="Converted");
@@ -158,7 +157,6 @@ async function importMeetingFile(){
    const cpName=String(getCell(row,["Channel Partner Name","CP Name","Partner Name","Channel Partner","Broker Name"])||"").trim();
    if(!cpName){skipped++;return}
    const rera=String(getCell(row,["RERA Reg.Name of CP/Broker","RERA Registered Name","RERA Name","RERA Reg Name","Registered Name"])||"").trim();
-   const phone=String(getCell(row,["Phone Number","Mobile Number","Contact Number","Phone","Mobile","Number"])||"").trim();
    const client=String(getCell(row,["Client Name","Customer Name","Buyer Name"])||"").trim();
    const owner=String(getCell(row,["Team Member","Owner","Assigned To"])||currentUser?.name||"Pranay").trim();
    const rawDate=getCell(row,["Meeting Date","Date"]);let meetingDate=today();
@@ -167,8 +165,8 @@ async function importMeetingFile(){
    else if(String(rawDate).trim()){const d=new Date(rawDate);if(!isNaN(d))meetingDate=d.toISOString().slice(0,10)}
    const notes=String(getCell(row,["Meeting Notes","Notes","Remarks","Discussion"])||"").trim();
    let p=db.partners.find(x=>String(x.name||"").trim().toLowerCase()===cpName.toLowerCase());
-   if(!p){p={id:crypto.randomUUID(),name:cpName,company:"",reraName:rera,phone,market:"",owner,priority:"B - Develop",status:"Meeting Done",budget:"",clientType:"Not assessed",requirements:client?1:0,lastTouch:meetingDate,nextDate:plus(3),notes,nextAction:client?"Follow up on client requirement":"Ask for a client requirement"};db.partners.push(p);created++}
-   else{if(rera)p.reraName=rera;if(phone)p.phone=phone;p.lastTouch=meetingDate;if(client)p.requirements=Math.max(1,Number(p.requirements)||0);if(p.status==="New"||p.status==="Contacted")p.status="Meeting Done"}
+   if(!p){p={id:crypto.randomUUID(),name:cpName,company:"",reraName:rera,phone:"",market:"",owner,priority:"B - Develop",status:"Meeting Done",budget:"",clientType:"Not assessed",requirements:client?1:0,lastTouch:meetingDate,nextDate:plus(3),notes,nextAction:client?"Follow up on client requirement":"Ask for a client requirement"};db.partners.push(p);created++}
+   else{if(rera)p.reraName=rera;p.lastTouch=meetingDate;if(client)p.requirements=Math.max(1,Number(p.requirements)||0);if(p.status==="New"||p.status==="Contacted")p.status="Meeting Done"}
    if(db.meetings.some(m=>m.cpId===p.id&&m.date===meetingDate&&m.clientName===client&&m.notes===notes)){skipped++;return}
    db.meetings.push({id:crypto.randomUUID(),cpId:p.id,cpName:p.name,reraName:rera||p.reraName||"",clientName:client,owner,date:meetingDate,notes});
    db.activity.push({id:crypto.randomUUID(),cpId:p.id,name:p.name,type:"Meeting",notes:client?"Met with CP; client introduced: "+client:(notes||"CP meeting recorded from Excel import"),date:meetingDate});
@@ -179,7 +177,7 @@ async function importMeetingFile(){
  }catch(e){status.textContent="Import failed: "+e.message}
 }
 function downloadMeetingTemplate(){
- const rows=[["Channel Partner Name","RERA Reg.Name of CP/Broker","Phone Number","Client Name","Meeting Date","Team Member","Meeting Notes"],["ABC Realty","ABC Realty Private Limited","9876543210","Rahul Sharma","2026-11-06","Jasjeet","Met at CP office; interested in premium 4 BHK buyers."],["XYZ Properties","XYZ Properties","9876501234","","2026-11-06","Prateek","Introductory meeting; follow up next week."]];
+ const rows=[["Channel Partner Name","RERA Reg.Name of CP/Broker","Client Name","Meeting Date","Team Member","Meeting Notes"],["ABC Realty","ABC Realty Private Limited","Rahul Sharma","2026-11-06","Jasjeet","Met at CP office; interested in premium 4 BHK buyers."],["XYZ Properties","XYZ Properties","","2026-11-06","Prateek","Introductory meeting; follow up next week."]];
  const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\n");
  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="CP_Meeting_Import_Template.csv";a.click();URL.revokeObjectURL(a.href)
 }
