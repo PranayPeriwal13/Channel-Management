@@ -213,19 +213,19 @@ function renderWaMessages(){
  const p=db.partners.find(x=>x.id===partnerId);
  const purpose=document.getElementById("waPurpose")?.value||"meeting";
  const extra=(document.getElementById("waContext")?.value||"").trim();
- const name=p?(p.name||"there").trim().split(/\\s+/)[0]:"there";
+ const name=p?(p.name||"there").trim().split(/\s+/)[0]:"there";
  const context=extra||[p?.budget,p?.market].filter(Boolean).join(" · ")||"a convenient time";
- const fill=t=>t.replace(/\\{name\\}/g,name).replace(/\\{context\\}/g,context);
+ const fill=t=>t.replace(/\{name\}/g,name).replace(/\{context\}/g,context);
  const list=waTemplates[purpose]||waTemplates.meeting;
  document.getElementById("waMessageList").innerHTML=list.map((t,i)=>'<div class="action-card"><div class="split"><b>Option '+(i+1)+'</b><button class="primary" onclick="copyWaMessage('+i+')">Copy message</button></div><p id="waText'+i+'" style="white-space:pre-wrap;line-height:1.65">'+esc(fill(t))+'</p></div>').join("");
 }
 function copyWaMessage(index){
  const p=db.partners.find(x=>x.id===document.getElementById("waPartner").value);
- const name=p?(p.name||"there").trim().split(/\\s+/)[0]:"there";
+ const name=p?(p.name||"there").trim().split(/\s+/)[0]:"there";
  const extra=(document.getElementById("waContext").value||"").trim();
  const context=extra||[p?.budget,p?.market].filter(Boolean).join(" · ")||"a convenient time";
  const purpose=document.getElementById("waPurpose").value;
- const message=(waTemplates[purpose]||waTemplates.meeting)[index].replace(/\\{name\\}/g,name).replace(/\\{context\\}/g,context);
+ const message=(waTemplates[purpose]||waTemplates.meeting)[index].replace(/\{name\}/g,name).replace(/\{context\}/g,context);
  const done=()=>{const b=document.querySelectorAll("#waMessageList .action-card button")[index];if(b){b.textContent="Copied!";setTimeout(()=>b.textContent="Copy message",1400)}};
  if(navigator.clipboard?.writeText){navigator.clipboard.writeText(message).then(done,()=>prompt("Copy your message:",message))}else prompt("Copy your message:",message);
 }
