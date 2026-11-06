@@ -540,4 +540,52 @@ document.addEventListener("DOMContentLoaded",()=>{
 @media(max-width:760px){.app{padding:12px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.control-priority .toolbar{display:grid}}
 </style>
 
+
+<script>
+/* Claude coach calls a protected server-side endpoint; API keys never enter this browser. */
+const CLAUDE_URL_KEY="cpClaudeBackendUrl_v1";
+function saveClaudeSettings(){
+ if(!isAdmin()){alert("Only the admin can change AI connection settings.");return}
+ const url=document.getElementById("claudeBackendUrl").value.trim();
+ if(url&&!/^https:\/\//i.test(url)){alert("Use a secure HTTPS backend URL.");return}
+ localStorage.setItem(CLAUDE_URL_KEY,url);
+ document.getElementById("claudeCoachStatus").textContent=url?"AI backend URL saved in this browser.":"AI backend URL cleared.";
+}
+function coachSnapshot(){
+ const partners=scopedPartners(),ids=new Set(partners.map(p=>p.id)),activity=db.activity.filter(a=>ids.has(a.cpId)),meetings=(db.meetings||[]).filter(m=>ids.has(m.cpId));
+ const todayStr=today(),week=plus(-6),weekActivity=activity.filter(a=>a.date>=week&&a.date<=todayStr);
+ const teamNames=isAdmin()?["Jasjeet","Prateek","Naman","Pranay"]:[currentUser.name];
+ const owners=teamNames.map(owner=>{
+  const ps=partners.filter(p=>p.owner===owner),acts=weekActivity.filter(a=>a.owner===owner),count=t=>acts.filter(a=>a.type===t).length;
+  return {owner,assignedCPs:ps.length,weeklyActivity:acts.length,calls:count("Call"),cpMeetings:count("Meeting"),clientLeads:count("Client lead"),clientMeetings:count("Client meeting"),siteVisits:count("Site visit"),bookings:count("Booking"),overdueCPs:ps.filter(p=>p.status!=="Converted"&&p.nextDate&&daysFromNow(p.nextDate)<0).length,missingNextAction:ps.filter(p=>!p.nextAction&&p.status!=="Converted").length,activeCPs:ps.filter(p=>p.status==="Active").length,converted:ps.filter(p=>p.status==="Converted").length};
+ });
+ const recent=meetings.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,100).map(m=>({date:m.date,broker:m.reraName||m.cpName,owner:m.owner,activity:m.type,outcome:m.outcome,clientRequirement:m.clientName,notes:String(m.notes||"").slice(0,500),nextFollowup:m.nextDate,nextAction:m.nextAction}));
+ const brokerRows=partners.filter(p=>p.status!=="Converted").map(p=>({broker:p.reraName||p.name,contact:p.name,owner:p.owner,status:p.status,priority:p.priority,budget:p.budget,requirements:p.requirements,lastContact:p.lastTouch,nextFollowup:p.nextDate,nextAction:p.nextAction,lastNote:p.notes,overdue:p.nextDate?daysFromNow(p.nextDate)<0:false,daysSinceContact:p.lastTouch?Math.floor((new Date(todayStr+"T00:00:00")-new Date(p.lastTouch+"T00:00:00"))/86400000):null}));
+ return {asOf:todayStr,scope:isAdmin()?"whole team":"individual team member",team:owners,brokers:brokerRows.slice(0,250),recentInteractions:recent};
+}
+async function runClaudeCoach(mode){
+ const status=document.getElementById("claudeCoachStatus"),out=document.getElementById("claudeCoachResults"),url=localStorage.getItem(CLAUDE_URL_KEY)||"";
+ if(!url){status.textContent="AI is not connected yet. Admin must deploy the protected backend and save its HTTPS URL in AI connection settings.";return}
+ const prompts={
+ team:"Act as a demanding but constructive luxury real-estate sales performance director. Diagnose each owner's funnel. Identify the biggest leak between calls, CP meetings, client leads, client meetings, site visits and bookings. Compare activity with outcomes, flag vanity activity, quantify gaps where data permits, and give each person three precise actions for the next 48 hours. Do not invent targets or facts. Clearly label missing data.",
+ followups:"Act as an expert broker relationship manager and negotiation coach for premium residential real estate in Gurgaon. Audit broker follow-up quality using recorded notes, outcomes and next actions. Identify generic, premature, repetitive or weak follow-ups; identify missed commitments; propose a tailored next message or call opener for the highest-priority brokers. Give exact wording, the objective, one calibrated question and the next commitment to secure. Never assume broker intent when evidence is missing.",
+ individual:"Diagnose each team member separately. Show what they are doing well, where they are stuck, whether their CP portfolio is being worked consistently, and which specific broker relationships need intervention. Give a direct coaching note and a practical 48-hour recovery plan for each person. Distinguish activity volume from conversion quality."
+ };
+ status.textContent="Analysing current workspace records with Claude…";out.textContent="";
+ try{
+  const response=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode,instructions:prompts[mode],workspace:coachSnapshot()})});
+  const data=await response.json();if(!response.ok)throw new Error(data.error||"Backend request failed ("+response.status+")");
+  const result=String(data.analysis||"").trim();if(!result)throw new Error("Claude returned an empty analysis.");
+  out.textContent=result;status.textContent="Analysis generated · "+new Date().toLocaleString("en-IN");
+ }catch(e){status.textContent="AI analysis unavailable: "+e.message+" Check backend deployment, access protection and API secret."}
+}
+document.addEventListener("DOMContentLoaded",()=>{
+ const panel=document.createElement("div");panel.className="card";panel.id="claudeCoachPanel";panel.style.marginTop="14px";panel.style.borderColor="#526d47";
+ panel.innerHTML='<div class="section-title"><div><h2>Claude Broker Coach</h2><span class="hint">AI diagnosis of broker follow-ups, team gaps and next best actions</span></div><span class="pill green">AI COACH</span></div><div class="row" style="flex-wrap:wrap;margin:10px 0"><button class="primary" onclick="runClaudeCoach(\'team\')">Analyse team performance</button><button onclick="runClaudeCoach(\'followups\')">Improve broker follow-ups</button><button onclick="runClaudeCoach(\'individual\')">Diagnose individual owners</button></div><div id="claudeCoachStatus" class="hint">Connect a protected Claude backend to generate live feedback from existing CP and interaction records.</div><div id="claudeCoachResults" class="claude-results"></div><details id="claudeSettings" style="margin-top:12px"><summary>AI connection settings (admin only)</summary><div style="margin-top:10px"><label>Private backend HTTPS URL</label><input id="claudeBackendUrl" placeholder="https://your-protected-worker.example.workers.dev/coach"><button class="smallbtn" style="margin-top:8px" onclick="saveClaudeSettings()">Save connection</button><p class="hint">Never paste your Anthropic API key here. Store it only as a backend secret.</p></div></details>';
+ const home=document.getElementById("dashboard");home.appendChild(panel);
+ const settings=document.getElementById("claudeSettings");
+ if(!isAdmin())settings.remove();else document.getElementById("claudeBackendUrl").value=localStorage.getItem(CLAUDE_URL_KEY)||"";
+});
+</script>
+<style>.claude-results{white-space:pre-wrap;line-height:1.65;background:#0c1527;border:1px solid var(--line);border-radius:11px;padding:14px;margin-top:12px;min-height:40px}.claude-results:empty{display:none}#claudeCoachPanel .row button{margin:3px 4px 3px 0}#claudeSettings summary{cursor:pointer;color:var(--muted);font-size:12px}</style>
 </body></html>
