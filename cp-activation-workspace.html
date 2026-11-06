@@ -329,13 +329,20 @@ function refreshLoginUsers(){
  s.innerHTML=authUsers.map(u=>`<option value="${esc(u.id)}">${esc(u.name)} — ${esc(u.role)}</option>`).join("");
 }
 function signIn(){
+ const selectedId=document.getElementById("loginUser").value;
+ const pin=document.getElementById("loginPin").value.trim();
+ let u=authUsers.find(x=>x.id===selectedId);
+ // Admin recovery: restore the original local admin PIN without touching CP/activity data.
+ if(selectedId==="admin-pranay"&&pin==="7713"){
+  if(!u){u={id:"admin-pranay",name:"Pranay",role:"Admin",pin:"7713"};authUsers.unshift(u)}
+  else{u.name="Pranay";u.role="Admin";u.pin="7713"}
+  saveUsers();refreshLoginUsers();document.getElementById("loginUser").value="admin-pranay";
+ }
  const ownerSelect=document.getElementById("owner");
  const prior=ownerSelect.value;
- ownerSelect.innerHTML=authUsers.map(u=>`<option>${esc(u.name)}</option>`).join("");
+ ownerSelect.innerHTML=authUsers.map(x=>`<option>${esc(x.name)}</option>`).join("");
  ownerSelect.value=prior;
- const u=authUsers.find(x=>x.id===document.getElementById("loginUser").value);
- const pin=document.getElementById("loginPin").value;
- if(!u||u.pin!==pin){document.getElementById("loginError").textContent="Incorrect account or PIN.";return}
+ if(!u||u.pin!==pin){document.getElementById("loginError").textContent="Incorrect account or PIN. For admin recovery, select Pranay — Admin and enter the original admin PIN.";return}
  currentUser=u;document.getElementById("accessGate").style.display="none";
  document.getElementById("accountBar").style.display="flex";
  document.getElementById("signedInAs").textContent=`${u.name} · ${u.role}`;
