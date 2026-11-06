@@ -396,7 +396,7 @@ document.addEventListener("DOMContentLoaded",()=>{
  document.querySelector("#dashboard").prepend(panel);
  const teamView=document.getElementById("team");
  const assignment=document.createElement("div");assignment.className="card";assignment.style.marginBottom="14px";
- assignment.innerHTML=`<div class="section-title"><h2>CP ownership overview</h2><span class="hint">Admin-only view</span></div><div id="ownershipRows"></div>`;
+ assignment.innerHTML=`<div class="section-title"><span class="hint">Admin-only view</span></div><div id="ownershipRows"></div>`;
  teamView.prepend(assignment);
  const oldTeamRender=renderTeam;
  renderTeam=function(){
