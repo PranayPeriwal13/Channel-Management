@@ -200,7 +200,7 @@ function renderInsights(){
   const ids=new Set(db.partners.filter(p=>p.owner===t).map(p=>p.id)),aa=acts.filter(a=>ids.has(a.cpId)&&a.date>=week),count=type=>aa.filter(a=>a.type===type).length;
   return '<tr><td>'+t+'</td><td>'+count("Meeting")+'</td><td>'+count("Client lead")+'</td><td>'+count("Client meeting")+'</td><td>'+count("Site visit")+'</td><td>'+count("Booking")+'</td><td>'+db.partners.filter(p=>p.owner===t&&p.status==="Active").length+'</td></tr>'
  }).join("");
- document.getElementById("meetingRows").innerHTML=meetings.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,100).map(m=>'<tr><td>'+dateLabel(m.date)+'</td><td>'+esc(m.cpName)+'</td><td>'+esc(m.reraName||"—")+'</td><td>'+esc(m.clientName||"—")+'</td><td>'+esc(m.owner||"—")+'</td><td>'+esc(m.notes||"—")+'</td></tr>').join("")||'<tr><td colspan="6" class="empty">No meeting records yet. Upload your Excel sheet to get started.</td></tr>';
+ document.getElementById("meetingRows").innerHTML=meetings.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,100).map(m=>'<tr><td>'+dateLabel(m.date)+'</td><td>'+esc(m.cpName)+'</td><td>'+esc(m.reraName||"—")+'</td><td>'+esc(m.phone||"—")+'</td><td>'+esc(m.clientName||"—")+'</td><td>'+esc(m.owner||"—")+'</td><td>'+esc(m.notes||"—")+'</td></tr>').join("")||'<tr><td colspan="7" class="empty">No meeting records yet. Upload your Excel sheet to get started.</td></tr>';
 }
 
 renderTimeline();renderAll();
