@@ -80,6 +80,7 @@ const plus=(n)=>{let d=new Date();d.setDate(d.getDate()+n);return d.toISOString(
 let db=JSON.parse(localStorage.getItem("cpActivationDB")||'{"partners":[],"activity":[]}');
 db.meetings=db.meetings||[];
 if(localStorage.getItem("cpPrateekContactedMigration")!=="done"){db.partners.forEach(p=>{if(String(p.owner||"").trim().toLowerCase()==="prateek")p.status="Contacted"});localStorage.setItem("cpActivationDB",JSON.stringify(db));localStorage.setItem("cpPrateekContactedMigration","done");}
+if(localStorage.getItem("cpPrateekJasjeetNewMigration")!=="done"){db.partners.forEach(p=>{const owner=String(p.owner||"").trim().toLowerCase();if(owner==="prateek"||owner==="jasjeet")p.status="New"});localStorage.setItem("cpActivationDB",JSON.stringify(db));localStorage.setItem("cpPrateekJasjeetNewMigration","done");}
 function save(){localStorage.setItem("cpActivationDB",JSON.stringify(db));renderAll()}
 function esc(s=""){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function dateLabel(d){if(!d)return"Not set";return new Date(d+"T00:00:00").toLocaleDateString("en-IN",{day:"numeric",month:"short"})}
