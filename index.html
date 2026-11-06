@@ -143,69 +143,69 @@ function downloadBackup(){let a=document.createElement("a");a.href=URL.createObj
 
 const waTemplates={
  intro:[
-  "Hi {name}, Pranay here from Sobha. Good connecting with you. I look after the team here in Gurgaon. Would be happy to stay in touch and share anything useful for your clients.",
-  "Hello {name}, this is Pranay from Sobha. Just wanted to introduce myself. Let’s connect and see how we can work together whenever you have a suitable client.",
-  "Hi {name}! Pranay this side from Sobha. I wanted to connect with you and understand the kind of property requirements you usually handle. Happy to help whenever you need any details."
+  "Hi {name}, Pranay here. We haven’t spoken before, so thought I’d drop you a message and introduce myself. I’m with Sobha in Gurgaon.",
+  "Hello {name}, Pranay this side. I got your contact and wanted to say hello. Good to have your number. We’ll stay connected.",
+  "Hi {name}, I’m Pranay from Sobha. Thought WhatsApp would be an easier way to connect. If you ever need anything from my side, just drop me a message."
  ],
  meeting:[
-  "Hi {name}, hope you’re doing well. I wanted to meet you for 15–20 minutes and walk you through what we have at Sobha. Would tomorrow or the day after work for you?",
-  "Hello {name}, I’d like to catch up and understand what your clients are looking for these days. Can we fix a short meeting this week? I can come to your office if that’s easier.",
-  "Hi {name}, thought it would be good to meet in person, share a quick update and understand how we can support your business. Which day would be convenient for you?"
+  "Hi {name}, I’m around your side this week. Are you usually free for a quick coffee or a 15-minute catch-up? Would be nice to meet.",
+  "{name}, when can I steal 15 minutes from you this week? Nothing formal. Just thought we should meet and get to know each other properly.",
+  "Hi {name}, I wanted to come by and meet you. Is Wednesday or Thursday easier, or is there another day that suits you?"
  ],
  call:[
-  "Hi {name}, thanks for taking my call. As discussed, let’s connect properly and go through the details. Tell me what time works for you and I’ll plan accordingly.",
-  "Good speaking with you, {name}. I’m sharing a quick message here so you have my number. Whenever you’re free, we can sit together and take this forward.",
-  "Thanks for your time today, {name}. I’ll share the details we discussed. Let me know if you’d like me to explain anything or meet you for a quick discussion."
+  "Thanks for picking up, {name}. Good to finally speak. I’ll send you the details we talked about here.",
+  "{name}, nice speaking to you just now. Saving my number here. Call me whenever you need anything.",
+  "Thanks for the quick chat, {name}. I know you were in the middle of something, so we can pick this up whenever you’re free."
  ],
  confirm:[
-  "Hi {name}, just confirming our meeting for {context}. Looking forward to catching up. Please let me know if the timing needs to change.",
-  "Hello {name}, we’re meeting {context}, right? I’ll keep the details ready. See you then.",
-  "Hi {name}, just checking that our meeting at {context} is still convenient for you. If you need to change the time, no problem—just let me know."
+  "{name}, just checking we’re still meeting {context}. I’ll see you there.",
+  "All set for {context}, {name}? Just wanted to make sure the time still works for you.",
+  "Okay {name}, noted for {context}. If anything changes at your end, just message me."
  ],
  reminder:[
-  "Hi {name}, just a quick reminder about our meeting today. Looking forward to seeing you. Let me know if you need the location or any details.",
-  "Hello {name}, hope your day is going well. We’re still on for our meeting today, right? See you soon.",
-  "Hi {name}, checking in before we meet. Please message me if you’re running late or need to reschedule."
+  "{name}, leaving in a bit. See you at the meeting point.",
+  "Just a heads-up, {name} — we’re meeting today. I’ll be there on time.",
+  "{name}, are we still good for today? Let me know if you’re held up. We can adjust."
  ],
  postmeeting:[
-  "Hi {name}, thanks for taking the time to meet today. Hope the discussion was useful. Let me know what questions come up and I’ll help with the details.",
-  "Good meeting you, {name}. I’ll share the points we discussed. Let’s stay connected and take it ahead whenever you have a matching client.",
-  "Thanks for the meeting, {name}. It was helpful to understand your business and client profile. Whenever a suitable requirement comes up, call or message me directly."
+  "Good meeting you today, {name}. Enjoyed the conversation. We should do this more often.",
+  "Thanks for making the time, {name}. I’ll send across the one or two things we discussed. No need to go through everything at once.",
+  "{name}, glad we could finally meet. I have a much better sense of your work now. Let’s keep in touch."
  ],
  details:[
-  "Hi {name}, sharing the project details we discussed. Have a look whenever you get time. If anything is not clear, just call me and I’ll explain it.",
-  "Hello {name}, as promised, I’m sending the information here. You can go through it and tell me what would be useful for your clients.",
-  "Hi {name}, I’ve shared the details for a quick look. If you have a client in mind, send me their basic requirement and we can work out the next step together."
+  "As promised, {name} — sending this across. Have a look whenever you get a moment. No hurry.",
+  "{name}, sharing the file here. If something doesn’t make sense, tell me which part and I’ll explain it.",
+  "Here’s the information we spoke about. You don’t need to read it all now. Just keep it handy."
  ],
  lead:[
-  "Hi {name}, are you currently handling anyone looking for a home in Gurgaon? If you share the budget and preferred configuration, I can check what may fit.",
-  "Hello {name}, just checking if you have any active clients who may be exploring this segment. Even a basic requirement will help me suggest the right options.",
-  "Hi {name}, whenever you get a suitable client, feel free to share the budget, configuration and timeline. I’ll help you with the options and next steps."
+  "{name}, quick question — what sort of buyers are you speaking to these days? Just trying to understand what’s coming up in the market.",
+  "Have you come across any interesting buyer requirements recently, {name}? Even if it’s early stage, happy to compare notes.",
+  "{name}, whenever you get a genuine requirement, send me the basics. We can figure out together whether it makes sense to take it ahead."
  ],
  sitevisit:[
-  "Hi {name}, if your client is comfortable, we can plan a site visit and let them experience the project in person. Which day would work for them?",
-  "Hello {name}, shall we look at a suitable time for your client to visit the site? I can coordinate the visit and make sure someone is available to guide them.",
-  "Hi {name}, a visit may help your client understand the location and the project better. Share their preferred day and time and I’ll arrange it."
+  "{name}, what does your client’s schedule look like? If they’re free, we can drop by the site together. No need to rush it.",
+  "Would Saturday or Sunday suit your client for a visit, {name}? If neither works, we’ll find another time.",
+  "{name}, if your client wants to see the place before deciding, I can coordinate the visit. Just tell me what time is easiest for them."
  ],
  followup:[
-  "Hi {name}, just following up on our last discussion. Have you had a chance to think about it? No rush—let me know if you need anything from my side.",
-  "Hello {name}, checking in to see if there’s any update. If the timing isn’t right, that’s completely fine. Happy to reconnect when it makes sense.",
-  "Hi {name}, wanted to keep the conversation going. Is there anything I can clarify or share that would help you take the next step?"
+  "{name}, did you get a chance to speak to them? Just checking where things stand. Even a quick update is fine.",
+  "Hey {name}, should I keep this on hold for now, or is it still something you’re working on? Either way is fine, just let me know.",
+  "{name}, I didn’t want to keep calling, so checking here. Is there anything pending from my side?"
  ],
  update:[
-  "Hi {name}, thought this update might be useful for you and your clients: {context}. Let me know if anyone would like to know more.",
-  "Hello {name}, sharing this because it may be relevant to a client you’re handling: {context}. Happy to explain the details if needed.",
-  "Hi {name}, a quick update from my side: {context}. If this matches anyone’s requirement, we can discuss the options together."
+  "{name}, passing this on because I thought you might find it useful: {context}. Nothing you need to do right now — just keeping you in the loop.",
+  "Small update from my side: {context}. Thought I’d tell you directly rather than send a long message.",
+  "{name}, this came up today and I thought of our conversation: {context}. Might be useful to keep in mind."
  ],
  reactivate:[
-  "Hi {name}, it’s been a while since we last connected. Hope work is going well. Would be nice to catch up and hear what kind of requirements you’re seeing these days.",
-  "Hello {name}, just wanted to reconnect. Let me know if you’re free for a quick call sometime this week. Happy to share any useful updates from our side.",
-  "Hi {name}, hope all is good. I thought I’d check in and see if there’s any way I can support you or your clients at the moment."
+  "{name}, your name came up in a conversation today, so I thought I’d say hello. How have things been?",
+  "It’s been a while, {name}. Are you still working mostly in Gurgaon, or have you moved into other markets too?",
+  "Hi {name}, long time! We never got around to catching up properly. Let’s fix that one of these days."
  ],
  thanks:[
-  "Hi {name}, thank you for sharing the requirement. I appreciate it. I’ll check the details and keep you updated on the next step.",
-  "Thanks, {name}, for bringing your client to the site. Hope the visit was useful. Let’s discuss their feedback and see how we can help them further.",
-  "Hi {name}, really appreciate your support. Thanks for staying involved. I’ll keep you posted and make sure we coordinate the next steps properly."
+  "Thanks for sending that across, {name}. Got it. I’ll take a look and get back to you.",
+  "{name}, thanks for bringing them along today. Appreciate you making the effort. Let’s see what they thought after they’ve had a little time.",
+  "Really appreciate the help, {name}. And please let me know if there’s anything I can do from my side as well."
  ]
 };
 function renderWaMessages(){
