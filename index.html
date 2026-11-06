@@ -15,7 +15,7 @@
  <div class="top-actions"><button class="ghost" onclick="exportCSV()">Export CSV</button><button class="ghost" onclick="downloadBackup()">Backup data</button><button class="primary" onclick="openAdd()">＋ Add Channel Partner</button></div>
 </header>
 <nav class="tabs">
- <button class="active" data-tab="dashboard">Dashboard</button><button data-tab="partners">CP Directory</button><button data-tab="actions">Today's Actions</button><button data-tab="team">Team & Targets</button><button data-tab="guide">Activation Playbook</button>
+ <button class="active" data-tab="dashboard">Dashboard</button><button data-tab="partners">CP Directory</button><button data-tab="actions">Today's Actions</button><button data-tab="team">Team & Targets</button><button data-tab="guide">Activation Playbook</button><button data-tab="insights">Meetings & Insights</button>
 </nav>
 <section id="dashboard" class="view active">
  <div class="grid stats" id="stats"></div>
@@ -43,6 +43,17 @@
  <div class="card" style="margin-top:14px"><div class="section-title"><h2>Weekly team targets</h2><span class="muted">Starting benchmarks per person</span></div><div class="table-wrap"><table><thead><tr><th>Activity</th><th>Weekly target / person</th><th>Why it matters</th></tr></thead><tbody>
  <tr><td>New CP contacts</td><td>25</td><td>Build a consistent acquisition funnel</td></tr><tr><td>Meaningful conversations</td><td>15</td><td>Qualify business potential</td></tr><tr><td>CP meetings</td><td>5</td><td>Build trust and product understanding</td></tr><tr><td>Activated CPs</td><td>3</td><td>Move from interest to action</td></tr><tr><td>Client leads</td><td>3</td><td>Generate genuine requirements</td></tr><tr><td>Client meetings</td><td>2</td><td>Convert requirements into opportunities</td></tr><tr><td>Site visits</td><td>1–2</td><td>Move towards booking</td></tr></tbody></table></div></div>
 </section>
+<section id="insights" class="view">
+ <div class="card"><div class="section-title"><div><h2>CP Meeting Tracker</h2><span class="hint">Upload your meeting Excel sheet to record CP meetings and client introductions.</span></div><span class="pill green">Excel import</span></div>
+  <div class="notice">Required columns: Channel Partner Name and RERA Reg.Name of CP/Broker. Optional column: Client Name. You can also include Meeting Date, Team Member and Meeting Notes. If a CP is not already in your directory, the import will create a basic CP record.</div>
+  <div class="row" style="margin-top:12px;align-items:center"><input id="meetingFile" type="file" accept=".xlsx,.xls,.csv" style="max-width:360px"><button class="primary" onclick="importMeetingFile()">Upload Excel / CSV</button><button class="ghost" onclick="downloadMeetingTemplate()">Download sample sheet</button></div>
+  <p id="meetingImportStatus" class="hint">Your original Excel file is not changed. Review the imported meeting records below.</p>
+ </div>
+ <div class="grid two" style="margin-top:14px"><div class="card"><div class="section-title"><h2>Next Best Actions</h2></div><div id="nbaRows"></div></div><div class="card"><div class="section-title"><h2>Dormant CP Recovery</h2></div><div id="dormantRows"></div></div></div>
+ <div class="card" style="margin-top:14px"><div class="section-title"><h2>CP Conversion Funnel</h2></div><div id="funnelRows"></div></div>
+ <div class="card" style="margin-top:14px"><div class="section-title"><h2>Team Performance Scorecard</h2><span class="hint">Last 7 days</span></div><div class="table-wrap"><table><thead><tr><th>Team member</th><th>CP meetings</th><th>Client leads</th><th>Client meetings</th><th>Site visits</th><th>Bookings</th><th>Active CPs</th></tr></thead><tbody id="scorecardRows"></tbody></table></div></div>
+ <div class="card" style="margin-top:14px"><div class="section-title"><h2>Imported Meeting History</h2></div><div class="table-wrap"><table><thead><tr><th>Date</th><th>Channel Partner</th><th>RERA registered name</th><th>Client name</th><th>Owner</th><th>Notes</th></tr></thead><tbody id="meetingRows"></tbody></table></div></div>
+</section>
 <section id="guide" class="view">
  <div class="grid two">
   <div class="card"><h2>5-stage CP activation system</h2><div class="action-card"><h3>1. Connect</h3><p>Call within 24 hours. Introduce yourself, check interest and ask for a short meeting.</p></div><div class="action-card"><h3>2. Understand</h3><p>Learn locations, client budget, end-user/investor mix, active requirements and current business.</p></div><div class="action-card"><h3>3. Activate</h3><p>Explain location, product, pricing, payment plan, USPs, inventory and commission process.</p></div><div class="action-card"><h3>4. Generate first lead</h3><p>Ask for a specific client requirement. Example: “Do you have anyone looking for a 4 BHK in the ₹6–8 Cr range?”</p></div><div class="action-card"><h3>5. Convert</h3><p>Arrange presentation, site visit, objection handling, negotiation and timely CP updates.</p></div></div>
@@ -52,7 +63,7 @@
 
 </div>
 <div class="modal" id="cpModal"><div class="modalbox"><button class="close" onclick="closeModal()">✕</button><h2 id="modalTitle">Add channel partner</h2><form id="cpForm"><input type="hidden" id="cpId"><div class="formgrid">
- <div><label>CP name *</label><input id="name" required placeholder="Full name"></div><div><label>Company / agency</label><input id="company" placeholder="Agency name"></div>
+ <div><label>CP name *</label><input id="name" required placeholder="Full name"></div><div><label>Company / agency</label><input id="company" placeholder="Agency name"></div><div><label>RERA registered name of CP / Broker</label><input id="reraName" placeholder="As per RERA registration"></div>
  <div><label>Phone / WhatsApp</label><input id="phone" placeholder="+91…"></div><div><label>Primary market / location</label><input id="market" placeholder="e.g. Gurgaon, Golf Course Extension"></div>
  <div><label>Assigned owner *</label><select id="owner"><option>Jasjeet</option><option>Prateek</option><option>Naman</option><option>Pranay</option></select></div><div><label>Priority</label><select id="priority"><option>A - High Potential</option><option selected>B - Develop</option><option>C - Nurture</option></select></div>
  <div><label>Status</label><select id="status"><option>New</option><option>Contacted</option><option>Meeting Scheduled</option><option>Meeting Done</option><option>Active</option><option>Dormant</option><option>Converted</option></select></div><div><label>Client budget range</label><input id="budget" placeholder="e.g. ₹6–8 Cr"></div>
@@ -67,6 +78,7 @@ const TEAM=["Jasjeet","Prateek","Naman","Pranay"];
 const today=()=>new Date().toISOString().slice(0,10);
 const plus=(n)=>{let d=new Date();d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)};
 let db=JSON.parse(localStorage.getItem("cpActivationDB")||'{"partners":[],"activity":[]}');
+db.meetings=db.meetings||[];
 function save(){localStorage.setItem("cpActivationDB",JSON.stringify(db));renderAll()}
 function esc(s=""){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function dateLabel(d){if(!d)return"Not set";return new Date(d+"T00:00:00").toLocaleDateString("en-IN",{day:"numeric",month:"short"})}
@@ -114,12 +126,12 @@ function renderTeam(){
  document.getElementById("teamCards").innerHTML=TEAM.map(t=>{let ps=db.partners.filter(p=>p.owner===t);return `<div class="card teamcard"><div class="split"><h3>${t}</h3><span class="pill">${ps.length} assigned CPs</span></div><div class="big">${ps.filter(p=>p.status==="Active").length} <span class="muted" style="font-size:12px">active</span></div><p class="hint">${ps.filter(p=>daysFromNow(p.nextDate)<=0&&p.status!=="Converted").length} follow-ups due · ${ps.filter(p=>p.status==="Converted").length} converted</p><div class="progress"><i style="width:${ps.length?ps.filter(p=>p.status==="Active"||p.status==="Converted").length/ps.length*100:0}%"></i></div></div>`}).join("");
 }
 function renderTimeline(){let a=[["Day 0","First call"],["Day 1","WhatsApp details"],["Day 3","Follow-up call"],["Day 5","Personal meeting"],["Day 7","Project presentation"],["Day 10","Inventory update"],["Day 15","Client requirement"],["Day 20","Client meeting"],["Day 30","Review & classify"]];document.getElementById("timeline").innerHTML=a.map(x=>`<div class="activity"><strong>${x[0]}</strong><p>${x[1]}</p></div>`).join("")}
-function renderAll(){renderStats();renderDashboard();renderPartners();renderActions();renderTeam()}
+function renderAll(){renderStats();renderDashboard();renderPartners();renderActions();renderTeam();renderInsights()}
 document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(b.dataset.tab).classList.add("active")}));
 function openAdd(){document.getElementById("cpForm").reset();document.getElementById("cpId").value="";document.getElementById("modalTitle").textContent="Add channel partner";document.getElementById("nextDate").value=plus(1);document.getElementById("lastTouch").value=today();document.getElementById("cpModal").classList.add("show")}
 function closeModal(){document.getElementById("cpModal").classList.remove("show")}
 function editCP(id){let p=db.partners.find(x=>x.id===id);if(!p)return;openAdd();document.getElementById("modalTitle").textContent="Update channel partner";Object.keys(p).forEach(k=>{let el=document.getElementById(k);if(el)el.value=p[k]??""});document.getElementById("cpId").value=id}
-document.getElementById("cpForm").addEventListener("submit",e=>{e.preventDefault();let id=document.getElementById("cpId").value;let p={};["name","company","phone","market","owner","priority","status","budget","clientType","requirements","lastTouch","nextDate","notes","nextAction"].forEach(k=>p[k]=document.getElementById(k).value);if(id){let old=db.partners.find(x=>x.id===id);Object.assign(old,p)}else{p.id=crypto.randomUUID();db.partners.push(p)}closeModal();save()});
+document.getElementById("cpForm").addEventListener("submit",e=>{e.preventDefault();let id=document.getElementById("cpId").value;let p={};["name","company","reraName","phone","market","owner","priority","status","budget","clientType","requirements","lastTouch","nextDate","notes","nextAction"].forEach(k=>p[k]=document.getElementById(k).value);if(id){let old=db.partners.find(x=>x.id===id);Object.assign(old,p)}else{p.id=crypto.randomUUID();db.partners.push(p)}closeModal();save()});
 function deleteCP(id){let p=db.partners.find(x=>x.id===id);if(confirm(`Delete ${p?.name||"this CP"}? This also removes it from this browser's workspace.`)){db.partners=db.partners.filter(x=>x.id!==id);save()}}
 function logOpen(id){let p=db.partners.find(x=>x.id===id);if(!p)return;document.getElementById("logForm").reset();document.getElementById("logId").value=id;document.getElementById("logNext").value=p.nextDate||plus(3);document.getElementById("logModal").classList.add("show")}
 function closeLog(){document.getElementById("logModal").classList.remove("show")}
