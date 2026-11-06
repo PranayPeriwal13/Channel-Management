@@ -131,7 +131,7 @@ function renderActions(){
 }
 function renderTeam(){
  const rows=[...db.partners].sort((a,b)=>String(a.reraName||"").localeCompare(String(b.reraName||"")));
- document.getElementById("teamOwnershipRows").innerHTML=rows.map(p=>`<tr><td><strong>${esc(p.reraName||"Not added")}</strong></td><td>${esc(p.name||"")}</td><td>${esc(p.phone||"—")}</td><td><select onchange="changeCPOwner('${p.id}',this.value)"><option value="">Unassigned</option>${TEAM.map(t=>`<option value="${t}" ${p.owner===t?"selected":""}>${t}</option>`).join("")}</select></td><td>${statusPill(p.status)}</td><td>${dateLabel(p.nextDate)}</td><td>${esc(p.notes||"—")}</td></tr>`).join("")||'<tr><td colspan="6" class="empty">No channel partners added yet.</td></tr>';
+ document.getElementById("teamOwnershipRows").innerHTML=rows.map(p=>`<tr><td><strong>${esc(p.reraName||"Not added")}</strong></td><td>${esc(p.name||"")}</td><td>${esc(p.phone||"—")}</td><td><select onchange="changeCPOwner('${p.id}',this.value)"><option value="">Unassigned</option>${TEAM.map(t=>`<option value="${t}" ${p.owner===t?"selected":""}>${t}</option>`).join("")}</select></td><td>${statusPill(p.status)}</td><td>${dateLabel(p.nextDate)}</td><td>${esc(p.notes||"—")}</td></tr>`).join("")||'<tr><td colspan="7" class="empty">No channel partners added yet.</td></tr>';
 }
 function changeCPOwner(id,owner){const p=db.partners.find(x=>x.id===id);if(!p)return;p.owner=owner;save();document.getElementById("teamOwnershipStatus").textContent="Ownership updated for "+(p.reraName||p.name)+"."; }
 async function downloadTeamOwnershipSheet(){
