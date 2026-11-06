@@ -677,9 +677,9 @@ async function importTeamWorkbook(){
   for(const row of data.actRows){
    const name=excelText(row,["Contact Person","Channel Partner Name","CP Name","Name"]),rera=excelText(row,["RERA Name","RERA Registered Name","RERA Reg.Name of CP/Broker"]),phone=excelText(row,["Phone Number","Contact Number","Mobile Number","Phone","Mobile"]),type=excelText(row,["Activity Type","Type"]);
    if(!name||!validTypes.includes(type)){actSkipped++;continue}
-   let p=findImportedCP({phone,rera,name});
-   if(!p){const rawOwner=excelText(row,["Owner","Team Member","Assigned To"]),owner=ownerName(rawOwner);p={id:crypto.randomUUID(),name,reraName:rera,phone,company:"",market:"",owner:owner||"Unassigned",priority:"B - Develop",status:"New",budget:"",clientType:"Not assessed",requirements:0,lastTouch:"",nextDate:"",notes:"",nextAction:""};db.partners.push(p);cpCreated++}
    const rawOwner=excelText(row,["Owner","Team Member","Assigned To"]),owner=ownerName(rawOwner);if(rawOwner&&!owner){invalidOwners++;actSkipped++;continue}
+   let p=findImportedCP({phone,rera,name});
+   if(!p){p={id:crypto.randomUUID(),name,reraName:rera,phone,company:"",market:"",owner:owner||"Unassigned",priority:"B - Develop",status:"New",budget:"",clientType:"Not assessed",requirements:0,lastTouch:"",nextDate:"",notes:"",nextAction:""};db.partners.push(p);cpCreated++}
    const date=excelDate(getCell(row,["Interaction Date","Meeting Date","Date"]))||today(),client=excelText(row,["Client Name / Requirement","Client Name","Client Requirement","Customer Name"]),outcome=excelText(row,["Outcome","Result"]),notes=excelText(row,["Interaction Notes","Meeting Notes","Notes","Remarks"]),next=excelDate(getCell(row,["Next Follow-up Date","Next Follow Up","Next Date"])),action=excelText(row,["Next Action","Next Committed Action"]),budget=excelText(row,["Client Budget","Budget"]);
    const duplicate=db.activity.some(a=>a.cpId===p.id&&a.date===date&&a.type===type&&String(a.notes||"")===([outcome,notes].filter(Boolean).join(": ")||outcome));
    if(duplicate){actSkipped++;continue}
