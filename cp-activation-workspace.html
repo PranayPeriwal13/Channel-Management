@@ -39,16 +39,13 @@
  <div class="card"><div class="section-title"><h2>Today's action queue</h2><span class="muted">Overdue and due today first</span></div><div id="actionQueue"></div></div>
 </section>
 <section id="team" class="view">
- <div class="grid two" id="teamCards"></div>
- <div class="card" style="margin-top:14px">
+ <div class="card">
   <div class="section-title"><div><h2>CP Ownership & Team Allocation</h2><span class="hint">Manage ownership directly or download the Excel sheet, edit it and upload it back.</span></div></div>
   <div class="notice">Keep the Contact Person name unchanged when editing the sheet so the system can match the CP. You can update RERA Name, Phone Number, Owner, Status, Priority and Next Follow-up Date.</div>
   <div class="row" style="margin:12px 0;align-items:center;flex-wrap:wrap"><button class="primary" onclick="downloadTeamOwnershipSheet()">Download Excel Sheet</button><input id="teamOwnershipFile" type="file" accept=".xlsx,.xls,.csv" style="max-width:300px"><button class="ghost" onclick="uploadTeamOwnershipSheet()">Upload Updated Sheet</button></div>
   <p id="teamOwnershipStatus" class="hint">Download the current CP list, make your changes in Excel, then upload the revised file to apply them.</p>
   <div class="table-wrap"><table><thead><tr><th>RERA Name</th><th>Contact Person</th><th>Phone Number</th><th>CP Owner</th><th>Status</th><th>Next Follow-up</th></tr></thead><tbody id="teamOwnershipRows"></tbody></table></div>
  </div>
- <div class="card" style="margin-top:14px"><div class="section-title"><h2>Weekly team targets</h2><span class="muted">Starting benchmarks per person</span></div><div class="table-wrap"><table><thead><tr><th>Activity</th><th>Weekly target / person</th><th>Why it matters</th></tr></thead><tbody>
- <tr><td>New CP contacts</td><td>25</td><td>Build a consistent acquisition funnel</td></tr><tr><td>Meaningful conversations</td><td>15</td><td>Qualify business potential</td></tr><tr><td>CP meetings</td><td>5</td><td>Build trust and product understanding</td></tr><tr><td>Activated CPs</td><td>3</td><td>Move from interest to action</td></tr><tr><td>Client leads</td><td>3</td><td>Generate genuine requirements</td></tr><tr><td>Client meetings</td><td>2</td><td>Convert requirements into opportunities</td></tr><tr><td>Site visits</td><td>1–2</td><td>Move towards booking</td></tr></tbody></table></div></div>
 </section>
 <section id="insights" class="view">
  <div class="card"><div class="section-title"><div><h2>CP Meeting Tracker</h2><span class="hint">Upload your meeting Excel sheet to record CP meetings and client introductions.</span></div><span class="pill green">Excel import</span></div>
@@ -394,17 +391,7 @@ document.addEventListener("DOMContentLoaded",()=>{
  <div id="adminUsers" style="margin-top:10px"></div>
  <div class="notice">Admin view: all CPs, owners, follow-ups, activity and conversions. Team view: each teammate sees only CPs assigned to their own account. Assign or reassign CP ownership from the CP record.</div>`;
  document.querySelector("#dashboard").prepend(panel);
- const teamView=document.getElementById("team");
- const assignment=document.createElement("div");assignment.className="card";assignment.style.marginBottom="14px";
- assignment.innerHTML=`<div class="section-title"><span class="hint">Admin-only view</span></div><div id="ownershipRows"></div>`;
- teamView.prepend(assignment);
- const oldTeamRender=renderTeam;
- renderTeam=function(){
-   if(!currentUser)return;
-   if(!isAdmin()){oldTeamRender();assignment.style.display="none";return}
-   assignment.style.display="block";oldTeamRender();
-   document.getElementById("ownershipRows").innerHTML=db.partners.map(p=>`<div class="split" style="padding:8px 0;border-bottom:1px solid var(--line)"><span><b>${esc(p.name)}</b><span class="sub">${esc(p.status)} · ${esc(p.priority)}</span></span><select style="max-width:180px" onchange="changeOwnerForCP('${p.id}',this.value)">${authUsers.filter(u=>u.role==="Admin"||u.role==="Team").map(u=>`<option ${u.name===p.owner?"selected":""}>${esc(u.name)}</option>`).join("")}</select></div>`).join("")||'<p class="muted">No CPs added yet.</p>';
- };
+
 });
 </script>
 
