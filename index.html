@@ -40,6 +40,13 @@
 </section>
 <section id="team" class="view">
  <div class="grid two" id="teamCards"></div>
+ <div class="card" style="margin-top:14px">
+  <div class="section-title"><div><h2>CP Ownership & Team Allocation</h2><span class="hint">Manage ownership directly or download the Excel sheet, edit it and upload it back.</span></div></div>
+  <div class="notice">Keep the Contact Person name unchanged when editing the sheet so the system can match the CP. You can update RERA Name, Phone Number, Owner, Status, Priority and Next Follow-up Date.</div>
+  <div class="row" style="margin:12px 0;align-items:center;flex-wrap:wrap"><button class="primary" onclick="downloadTeamOwnershipSheet()">Download Excel Sheet</button><input id="teamOwnershipFile" type="file" accept=".xlsx,.xls,.csv" style="max-width:300px"><button class="ghost" onclick="uploadTeamOwnershipSheet()">Upload Updated Sheet</button></div>
+  <p id="teamOwnershipStatus" class="hint">Download the current CP list, make your changes in Excel, then upload the revised file to apply them.</p>
+  <div class="table-wrap"><table><thead><tr><th>RERA Name</th><th>Contact Person</th><th>Phone Number</th><th>CP Owner</th><th>Status</th><th>Next Follow-up</th></tr></thead><tbody id="teamOwnershipRows"></tbody></table></div>
+ </div>
  <div class="card" style="margin-top:14px"><div class="section-title"><h2>Weekly team targets</h2><span class="muted">Starting benchmarks per person</span></div><div class="table-wrap"><table><thead><tr><th>Activity</th><th>Weekly target / person</th><th>Why it matters</th></tr></thead><tbody>
  <tr><td>New CP contacts</td><td>25</td><td>Build a consistent acquisition funnel</td></tr><tr><td>Meaningful conversations</td><td>15</td><td>Qualify business potential</td></tr><tr><td>CP meetings</td><td>5</td><td>Build trust and product understanding</td></tr><tr><td>Activated CPs</td><td>3</td><td>Move from interest to action</td></tr><tr><td>Client leads</td><td>3</td><td>Generate genuine requirements</td></tr><tr><td>Client meetings</td><td>2</td><td>Convert requirements into opportunities</td></tr><tr><td>Site visits</td><td>1–2</td><td>Move towards booking</td></tr></tbody></table></div></div>
 </section>
@@ -127,6 +134,34 @@ function renderActions(){
 }
 function renderTeam(){
  document.getElementById("teamCards").innerHTML=TEAM.map(t=>{let ps=db.partners.filter(p=>p.owner===t);return `<div class="card teamcard"><div class="split"><h3>${t}</h3><span class="pill">${ps.length} assigned CPs</span></div><div class="big">${ps.filter(p=>p.status==="Active").length} <span class="muted" style="font-size:12px">active</span></div><p class="hint">${ps.filter(p=>daysFromNow(p.nextDate)<=0&&p.status!=="Converted").length} follow-ups due · ${ps.filter(p=>p.status==="Converted").length} converted</p><div class="progress"><i style="width:${ps.length?ps.filter(p=>p.status==="Active"||p.status==="Converted").length/ps.length*100:0}%"></i></div></div>`}).join("");
+ const rows=[...db.partners].sort((a,b)=>String(a.reraName||"").localeCompare(String(b.reraName||"")));
+ document.getElementById("teamOwnershipRows").innerHTML=rows.map(p=>`<tr><td><strong>${esc(p.reraName||"Not added")}</strong></td><td>${esc(p.name||"")}</td><td>${esc(p.phone||"—")}</td><td><select onchange="changeCPOwner('${p.id}',this.value)"><option value="">Unassigned</option>${TEAM.map(t=>`<option value="${t}" ${p.owner===t?"selected":""}>${t}</option>`).join("")}</select></td><td>${statusPill(p.status)}</td><td>${dateLabel(p.nextDate)}</td></tr>`).join("")||'<tr><td colspan="6" class="empty">No channel partners added yet.</td></tr>';
+}
+function changeCPOwner(id,owner){const p=db.partners.find(x=>x.id===id);if(!p)return;p.owner=owner;save();document.getElementById("teamOwnershipStatus").textContent="Ownership updated for "+p.name+"."; }
+async function downloadTeamOwnershipSheet(){
+ try{await loadXlsx();const rows=[["RERA Name","Contact Person","Phone Number","Owner","Status","Priority","Next Follow-up Date"],...db.partners.map(p=>[p.reraName||"",p.name||"",p.phone||"",p.owner||"",p.status||"New",p.priority||"",p.nextDate||""])];
+ const ws=XLSX.utils.aoa_to_sheet(rows),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"CP Ownership");XLSX.writeFile(wb,"CP_Team_Ownership.xlsx");
+ }catch(e){document.getElementById("teamOwnershipStatus").textContent="Could not create Excel file: "+e.message}
+}
+async function uploadTeamOwnershipSheet(){
+ const file=document.getElementById("teamOwnershipFile").files[0],status=document.getElementById("teamOwnershipStatus");
+ if(!file){status.textContent="Please select your edited Excel or CSV sheet first.";return}
+ try{await loadXlsx();const wb=XLSX.read(await file.arrayBuffer(),{type:"array",cellDates:true});const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""});if(!rows.length)throw new Error("The uploaded sheet is empty.");
+ let updated=0,notFound=0,invalid=0;
+ rows.forEach(row=>{const cpName=String(getCell(row,["Contact Person","Channel Partner Name","CP Name","Name"])||"").trim();if(!cpName){invalid++;return}
+ const rera=String(getCell(row,["RERA Name","RERA Reg.Name of CP/Broker","RERA Registered Name"])||"").trim();
+ let p=db.partners.find(x=>String(x.name||"").trim().toLowerCase()===cpName.toLowerCase()&&(!rera||!x.reraName||String(x.reraName).trim().toLowerCase()===rera.toLowerCase()));
+ if(!p){notFound++;return}
+ const owner=String(getCell(row,["Owner","CP Owner","Team Member","Assigned To"])||"").trim();if(owner){if(!TEAM.some(t=>t.toLowerCase()===owner.toLowerCase())){invalid++;return}p.owner=TEAM.find(t=>t.toLowerCase()===owner.toLowerCase())}
+ const phone=String(getCell(row,["Phone Number","Contact Number","Mobile Number","Phone","Mobile"])||"").trim();if(phone)p.phone=phone;
+ if(rera)p.reraName=rera;
+ const s=String(getCell(row,["Status","CP Status"])||"").trim();if(s)p.status=s;
+ const priority=String(getCell(row,["Priority","CP Priority"])||"").trim();if(priority)p.priority=priority;
+ const next= getCell(row,["Next Follow-up Date","Next Follow Up","Next Date"]);if(next){let d=next instanceof Date?next.toISOString().slice(0,10):String(next).trim();if(typeof next==="number"&&XLSX.SSF){const x=XLSX.SSF.parse_date_code(next);if(x?.y)d=new Date(Date.UTC(x.y,x.m-1,x.d)).toISOString().slice(0,10)}else if(!/^\d{4}-\d{2}-\d{2}$/.test(d)){const parsed=new Date(d);if(!isNaN(parsed))d=parsed.toISOString().slice(0,10)}if(/^\d{4}-\d{2}-\d{2}$/.test(d))p.nextDate=d}
+ updated++;
+ });
+ save();status.textContent="Updated "+updated+" CP records. "+notFound+" rows did not match an existing CP; "+invalid+" rows were skipped. No unmatched CPs were created.";
+ }catch(e){status.textContent="Upload failed: "+e.message}
 }
 function renderTimeline(){let a=[["Day 0","First call"],["Day 1","WhatsApp details"],["Day 3","Follow-up call"],["Day 5","Personal meeting"],["Day 7","Project presentation"],["Day 10","Inventory update"],["Day 15","Client requirement"],["Day 20","Client meeting"],["Day 30","Review & classify"]];document.getElementById("timeline").innerHTML=a.map(x=>`<div class="activity"><strong>${x[0]}</strong><p>${x[1]}</p></div>`).join("")}
 function renderAll(){renderStats();renderDashboard();renderPartners();renderActions();renderTeam();renderInsights()}
