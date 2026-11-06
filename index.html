@@ -15,7 +15,7 @@
  <div class="top-actions"><button class="ghost" onclick="exportCSV()">Export CSV</button><button class="ghost" onclick="downloadBackup()">Backup data</button><button class="primary" onclick="openAdd()">＋ Add Channel Partner</button></div>
 </header>
 <nav class="tabs">
- <button class="active" data-tab="dashboard">Dashboard</button><button data-tab="partners">CP Directory</button><button data-tab="actions">Today's Actions</button><button data-tab="team">Team & Targets</button><button data-tab="guide">Activation Playbook</button><button data-tab="logmeeting">Log a Meeting</button><button data-tab="meetingreport">Meetings Report</button>
+ <button class="active" data-tab="dashboard">Admin Control Room</button><button data-tab="partners">CP Directory</button><button data-tab="logmeeting">Log Activity</button><button data-tab="guide">Playbook</button>
 </nav>
 <section id="dashboard" class="view active">
  <div class="grid stats" id="stats"></div>
@@ -455,4 +455,89 @@ document.addEventListener("DOMContentLoaded",()=>{
 <style>
 .cp-search-results{position:relative;z-index:5;max-height:260px;overflow:auto;background:#101b2e;border:1px solid var(--line);border-radius:9px;margin-top:5px}.cp-search-option{display:flex;flex-direction:column;gap:3px;text-align:left;width:100%;padding:10px 12px;background:transparent;color:var(--text);border:0;border-bottom:1px solid var(--line);cursor:pointer}.cp-search-option:hover{background:#22334e}.cp-search-option span{font-size:12px;color:var(--muted)}#meetingreport .row input,#meetingreport .row select{min-width:160px;flex:1}
 </style>
+
+<script>
+/* Five-minute admin control room: one daily view, supporting reports only on demand. */
+document.addEventListener("DOMContentLoaded",()=>{
+ const home=document.getElementById("dashboard");
+ const actions=document.getElementById("actions");
+ const team=document.getElementById("team");
+ const report=document.getElementById("meetingreport");
+ const section=(title,content,open=false)=>{
+   const d=document.createElement("details");d.className="admin-fold";
+   if(open)d.open=true;
+   const summary=document.createElement("summary");summary.textContent=title;d.appendChild(summary);
+   if(content)d.appendChild(content);
+   return d;
+ };
+ const take=(id)=>document.getElementById(id);
+ const actionBlock=document.createElement("div");actionBlock.className="card control-priority";
+ const actionTitle=document.createElement("div");actionTitle.className="section-title";
+ actionTitle.innerHTML='<div><h2>Today\'s priorities</h2><span class="hint">Overdue first. Work this list, log the outcome, and move on.</span></div><button class="primary" onclick="document.querySelector(\'[data-tab=logmeeting]\').click()">＋ Log activity</button>';
+ actionBlock.appendChild(actionTitle);
+ actionBlock.appendChild(take("actionSummary"));
+ const filters=actions.querySelector(".row");
+ if(filters)actionBlock.appendChild(filters);
+ actionBlock.appendChild(take("actionQueue"));
+ const stats=take("stats");
+ home.insertBefore(actionBlock,home.querySelector(".grid.layout"));
+ const oldLayout=home.querySelector(".grid.layout");
+ if(oldLayout){
+   const priority=oldLayout.children[0],pipeline=oldLayout.children[1];
+   const priorityWrap=document.createElement("div");priorityWrap.className="card";
+   priorityWrap.appendChild(priority.querySelector(".section-title"));priorityWrap.appendChild(take("priorityActions"));
+   const pipelineWrap=document.createElement("div");pipelineWrap.className="card";
+   pipelineWrap.appendChild(pipeline.querySelector(".section-title"));pipelineWrap.appendChild(take("pipeline"));
+   home.appendChild(section("Pipeline breakdown",pipelineWrap));
+   home.appendChild(section("Recommended CP follow-ups",priorityWrap));
+   oldLayout.remove();
+ }
+ const recent=home.querySelector(".grid.two");
+ if(recent){home.appendChild(section("Recent activity",take("recent")));home.appendChild(section("Weekly conversion pulse",take("pulse")));recent.remove();}
+ const teamSummary=take("teamSummary");
+ const targetsCard=team.querySelector("#teamTargetsRows")?.closest(".card");
+ const ownershipCard=team.querySelector("#teamOwnershipRows")?.closest(".card");
+ const teamWrap=document.createElement("div");teamWrap.className="admin-detail-content";
+ if(teamSummary)teamWrap.appendChild(teamSummary);
+ if(targetsCard)teamWrap.appendChild(targetsCard);
+ home.appendChild(section("Team performance & weekly targets",teamWrap));
+ if(ownershipCard)home.appendChild(section("CP ownership, workload & bulk update",ownershipCard));
+ const reportCard=report.querySelector(".card");
+ if(reportCard){
+   const reportHeading=report.querySelector(".section-title");
+   const reportWrap=document.createElement("div");reportWrap.className="admin-detail-content";
+   if(reportHeading)reportWrap.appendChild(reportHeading);
+   reportWrap.appendChild(reportCard);
+   home.appendChild(section("Meeting register, search & export",reportWrap));
+ }
+ const importCard=report.querySelectorAll(".card")[1];
+ if(importCard)home.appendChild(section("Import meeting register",importCard));
+ actions.remove();team.remove();report.remove();
+ const statsLabel=document.createElement("div");statsLabel.className="section-title";
+ statsLabel.innerHTML='<div><h2>Portfolio snapshot</h2><span class="hint">A quick health check of the full CP pipeline.</span></div>';
+ home.insertBefore(statsLabel,stats);
+ const hint=document.createElement("p");hint.className="control-hint";
+ hint.textContent="Daily routine: scan overdue and due-today actions → log meaningful interactions → check team targets only when needed. Detailed registers stay tucked away below.";
+ home.insertBefore(hint,actionBlock);
+ document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+   if(b.dataset.tab==="dashboard")window.scrollTo({top:0,behavior:"smooth"});
+ }));
+});
+</script>
+<style>
+.admin-fold{margin-top:12px;background:#111b2e;border:1px solid var(--line);border-radius:13px;padding:0 14px}
+.admin-fold>summary{cursor:pointer;list-style:none;padding:14px 2px;font-weight:800;color:#dce8fa}
+.admin-fold>summary::-webkit-details-marker{display:none}
+.admin-fold>summary:after{content:"＋";float:right;color:var(--green)}
+.admin-fold[open]>summary:after{content:"−"}
+.admin-detail-content{padding:0 0 14px}
+.admin-detail-content>.card{margin-top:10px}
+.control-priority{margin-top:14px}
+.control-priority #actionSummary{margin:8px 0 14px}
+.control-hint{color:var(--muted);font-size:12px;margin:0 0 10px}
+#dashboard>.grid.stats{margin-bottom:10px}
+#dashboard .table-wrap{max-width:100%}
+@media(max-width:760px){.app{padding:12px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.control-priority .toolbar{display:grid}}
+</style>
+
 </body></html>
