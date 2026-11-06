@@ -588,4 +588,148 @@ document.addEventListener("DOMContentLoaded",()=>{
 });
 </script>
 <style>.claude-results{white-space:pre-wrap;line-height:1.65;background:#0c1527;border:1px solid var(--line);border-radius:11px;padding:14px;margin-top:12px;min-height:40px}.claude-results:empty{display:none}#claudeCoachPanel .row button{margin:3px 4px 3px 0}#claudeSettings summary{cursor:pointer;color:var(--muted);font-size:12px}</style>
+
+<script>
+/* Admin-first Excel workflow: team sends one workbook; admin imports once. */
+function excelDate(v){
+ if(v instanceof Date&&!isNaN(v))return v.toISOString().slice(0,10);
+ if(typeof v==="number"&&window.XLSX?.SSF){const d=XLSX.SSF.parse_date_code(v);if(d?.y)return new Date(Date.UTC(d.y,d.m-1,d.d)).toISOString().slice(0,10)}
+ const x=String(v||"").trim();if(!x)return "";
+ if(/^\d{4}-\d{2}-\d{2}$/.test(x))return x;
+ const d=new Date(x);return isNaN(d)?"":d.toISOString().slice(0,10);
+}
+function excelText(row,aliases){return String(getCell(row,aliases)||"").trim()}
+function findImportedCP({phone,rera,name}){
+ const norm=x=>String(x||"").trim().toLowerCase().replace(/\s+/g," ");
+ let p=phone?db.partners.find(x=>norm(x.phone)===norm(phone)):null;
+ if(!p&&rera&&name)p=db.partners.find(x=>norm(x.reraName)===norm(rera)&&norm(x.name)===norm(name));
+ if(!p&&rera)p=db.partners.find(x=>norm(x.reraName)===norm(rera));
+ if(!p&&name)p=db.partners.find(x=>norm(x.name)===norm(name));
+ return p;
+}
+function downloadTeamWorkbook(){
+ loadXlsx().then(()=>{
+  const cpHeaders=["RERA Name","Contact Person","Phone Number","Owner","Status","Priority","Client Budget","Active Client Requirements","Last Contact Date","Next Follow-up Date","Next Action","Latest Notes"];
+  const activityHeaders=["RERA Name","Contact Person","Phone Number","Owner","Interaction Date","Activity Type","Outcome","Client Name / Requirement","Client Budget","Interaction Notes","Next Follow-up Date","Next Action"];
+  const instructions=[
+   ["TEAM UPDATE WORKBOOK","Instructions"],
+   ["1","Use CP Status to update the latest position of each broker. One row per broker."],
+   ["2","Use Activity Log to record every meaningful call, meeting, client lead, client meeting, site visit or booking. One row per interaction."],
+   ["3","Do not change RERA Name, Contact Person or Phone Number for an existing broker. These identify the record."],
+   ["4","Use exact Owner names: Jasjeet, Prateek, Naman, Pranay."],
+   ["5","Status values: New, Contacted, Meeting Scheduled, Meeting Done, Active, Dormant, Converted."],
+   ["6","Activity Type values: Call, WhatsApp, Meeting, Project presentation, Client lead, Client meeting, Site visit, Negotiation, Booking."],
+   ["7","Always enter Next Follow-up Date and Next Action. Leave fields blank only if genuinely not applicable."],
+   ["8","Send the completed workbook to Pranay for upload. Do not rename the two sheet tabs."]
+  ];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([cpHeaders]),"CP Status");
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([activityHeaders]),"Activity Log");
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(instructions),"Instructions");
+  XLSX.writeFile(wb,"Team_Daily_Update_Template.xlsx");
+ }).catch(e=>alert("Could not create template: "+e.message));
+}
+async function previewTeamWorkbook(){
+ const file=document.getElementById("teamExcelFile").files[0],status=document.getElementById("teamExcelStatus"),preview=document.getElementById("teamExcelPreview");
+ if(!file){status.textContent="Choose the team's Excel workbook first.";return}
+ try{
+  await loadXlsx();const wb=XLSX.read(await file.arrayBuffer(),{type:"array",cellDates:true});
+  const cpSheet=wb.Sheets["CP Status"],actSheet=wb.Sheets["Activity Log"];
+  if(!cpSheet&&!actSheet)throw new Error('Workbook must contain a "CP Status" or "Activity Log" sheet.');
+  const cpRows=cpSheet?XLSX.utils.sheet_to_json(cpSheet,{defval:""}):[];
+  const actRows=actSheet?XLSX.utils.sheet_to_json(actSheet,{defval:""}):[];
+  const cpValid=cpRows.filter(x=>excelText(x,["Contact Person","Channel Partner Name","CP Name","Name"])||excelText(x,["Phone Number","Phone","Mobile"])).length;
+  const actValid=actRows.filter(x=>excelText(x,["Contact Person","Channel Partner Name","CP Name","Name"])&&excelText(x,["Activity Type","Type"])).length;
+  window.__teamWorkbookPreview={name:file.name,cpRows,actRows};
+  preview.innerHTML='<div class="grid four"><div class="card stat"><small>CP updates</small><strong>'+cpValid+'</strong><span>Rows ready to merge</span></div><div class="card stat"><small>Interactions</small><strong>'+actValid+'</strong><span>Rows ready to log</span></div><div class="card stat"><small>CP rows skipped</small><strong>'+(cpRows.length-cpValid)+'</strong><span>Missing identity</span></div><div class="card stat"><small>Activity rows skipped</small><strong>'+(actRows.length-actValid)+'</strong><span>Missing CP or type</span></div></div>';
+  status.textContent="Preview ready: "+file.name+". Nothing has been changed yet.";
+  document.getElementById("teamExcelImportBtn").disabled=!(cpValid||actValid);
+ }catch(e){window.__teamWorkbookPreview=null;preview.innerHTML="";status.textContent="Could not read workbook: "+e.message;document.getElementById("teamExcelImportBtn").disabled=true}
+}
+async function importTeamWorkbook(){
+ if(!isAdmin()){alert("Only the admin can import team workbooks.");return}
+ const data=window.__teamWorkbookPreview;if(!data){document.getElementById("teamExcelStatus").textContent="Preview the workbook before importing.";return}
+ if(!confirm("Import "+data.name+"? Existing CP records will be updated, new CPs may be created, and new interactions will be added. Duplicate interactions will be skipped."))return;
+ const status=document.getElementById("teamExcelStatus");let cpUpdated=0,cpCreated=0,cpSkipped=0,actAdded=0,actSkipped=0,invalidOwners=0;
+ const validStatus=["New","Contacted","Meeting Scheduled","Meeting Done","Active","Dormant","Converted"];
+ const validTypes=["Call","WhatsApp","Meeting","Project presentation","Client lead","Client meeting","Site visit","Negotiation","Booking"];
+ const ownerName=v=>TEAM.find(t=>t.toLowerCase()===String(v||"").trim().toLowerCase())||"";
+ try{
+  for(const row of data.cpRows){
+   const name=excelText(row,["Contact Person","Channel Partner Name","CP Name","Name"]),rera=excelText(row,["RERA Name","RERA Registered Name","RERA Reg.Name of CP/Broker"]),phone=excelText(row,["Phone Number","Contact Number","Mobile Number","Phone","Mobile"]);
+   if(!name&&!phone){cpSkipped++;continue}
+   let p=findImportedCP({phone,rera,name});
+   const rawOwner=excelText(row,["Owner","Team Member","Assigned To"]),owner=ownerName(rawOwner);
+   if(rawOwner&&!owner){invalidOwners++;cpSkipped++;continue}
+   const statusValue=excelText(row,["Status","CP Status","Partner Status"]);
+   if(statusValue&&!validStatus.includes(statusValue)){cpSkipped++;continue}
+   if(!p){if(!name){cpSkipped++;continue}p={id:crypto.randomUUID(),name,reraName:rera,phone,company:"",market:"",owner:owner||"Unassigned",priority:"B - Develop",status:statusValue||"New",budget:"",clientType:"Not assessed",requirements:0,lastTouch:"",nextDate:"",notes:"",nextAction:""};db.partners.push(p);cpCreated++}else cpUpdated++;
+   if(name)p.name=name;if(rera)p.reraName=rera;if(phone)p.phone=phone;if(owner)p.owner=owner;
+   const priority=excelText(row,["Priority","CP Priority"]);if(priority)p.priority=priority;
+   const budget=excelText(row,["Client Budget","Budget"]);if(budget)p.budget=budget;
+   const req=getCell(row,["Active Client Requirements","Requirements","Active Requirements"]);if(req!==""&&req!==null&&req!==undefined)p.requirements=Math.max(0,Number(req)||0);
+   if(statusValue)p.status=statusValue;
+   const last=excelDate(getCell(row,["Last Contact Date","Last Contact","Last Touch"]));if(last)p.lastTouch=last;
+   const next=excelDate(getCell(row,["Next Follow-up Date","Next Follow Up","Next Date"]));if(next)p.nextDate=next;
+   const action=excelText(row,["Next Action","Next Committed Action"]);if(action)p.nextAction=action;
+   const notes=excelText(row,["Latest Notes","Notes","Notes / Remarks","Remarks"]);if(notes)p.notes=notes;
+  }
+  for(const row of data.actRows){
+   const name=excelText(row,["Contact Person","Channel Partner Name","CP Name","Name"]),rera=excelText(row,["RERA Name","RERA Registered Name","RERA Reg.Name of CP/Broker"]),phone=excelText(row,["Phone Number","Contact Number","Mobile Number","Phone","Mobile"]),type=excelText(row,["Activity Type","Type"]);
+   if(!name||!validTypes.includes(type)){actSkipped++;continue}
+   let p=findImportedCP({phone,rera,name});
+   if(!p){const rawOwner=excelText(row,["Owner","Team Member","Assigned To"]),owner=ownerName(rawOwner);p={id:crypto.randomUUID(),name,reraName:rera,phone,company:"",market:"",owner:owner||"Unassigned",priority:"B - Develop",status:"New",budget:"",clientType:"Not assessed",requirements:0,lastTouch:"",nextDate:"",notes:"",nextAction:""};db.partners.push(p);cpCreated++}
+   const rawOwner=excelText(row,["Owner","Team Member","Assigned To"]),owner=ownerName(rawOwner);if(rawOwner&&!owner){invalidOwners++;actSkipped++;continue}
+   const date=excelDate(getCell(row,["Interaction Date","Meeting Date","Date"]))||today(),client=excelText(row,["Client Name / Requirement","Client Name","Client Requirement","Customer Name"]),outcome=excelText(row,["Outcome","Result"]),notes=excelText(row,["Interaction Notes","Meeting Notes","Notes","Remarks"]),next=excelDate(getCell(row,["Next Follow-up Date","Next Follow Up","Next Date"])),action=excelText(row,["Next Action","Next Committed Action"]),budget=excelText(row,["Client Budget","Budget"]);
+   const duplicate=db.activity.some(a=>a.cpId===p.id&&a.date===date&&a.type===type&&String(a.notes||"")===([outcome,notes].filter(Boolean).join(": ")||outcome));
+   if(duplicate){actSkipped++;continue}
+   if(owner)p.owner=owner;
+   p.lastTouch=!p.lastTouch||date>p.lastTouch?date:p.lastTouch;
+   if(next)p.nextDate=next;if(action)p.nextAction=action;if(notes)p.notes=notes;if(budget)p.budget=budget;
+   if(client)p.requirements=Math.max(1,Number(p.requirements)||0);
+   if(type==="Booking"||outcome.toLowerCase().includes("booked")||outcome.toLowerCase().includes("booking confirmed"))p.status="Converted";
+   else if(type==="Site visit"||type==="Client lead"||type==="Client meeting")p.status="Active";
+   else if(type==="Meeting"&&p.status==="New")p.status="Meeting Done";
+   const detail=[outcome,notes].filter(Boolean).join(": ")||type;
+   db.activity.push({id:crypto.randomUUID(),cpId:p.id,name:p.name,type,notes:detail,date,owner:p.owner});
+   db.meetings.push({id:crypto.randomUUID(),cpId:p.id,cpName:p.name,reraName:p.reraName||"",phone:p.phone||"",clientName:client,owner:p.owner,date,notes,outcome,type,nextDate:next,nextAction:action});
+   actAdded++;
+  }
+  db.importHistory=db.importHistory||[];db.importHistory.push({file:data.name,date:today(),cpUpdated,cpCreated,actAdded,cpSkipped,actSkipped});
+  save();window.__teamWorkbookPreview=null;document.getElementById("teamExcelFile").value="";document.getElementById("teamExcelPreview").innerHTML="";
+  status.textContent="Import complete. CPs updated: "+cpUpdated+" · New CPs: "+cpCreated+" · Interactions added: "+actAdded+" · Skipped rows: "+(cpSkipped+actSkipped)+" · Invalid owner names: "+invalidOwners+".";
+  document.getElementById("teamExcelImportBtn").disabled=true;renderAdminExcelHub();
+ }catch(e){status.textContent="Import stopped: "+e.message}
+}
+function renderAdminExcelHub(){
+ const panel=document.getElementById("teamExcelHub");if(!panel||!isAdmin())return;
+ const p=db.partners,open=p.filter(x=>x.status!=="Converted"),overdue=open.filter(x=>x.nextDate&&daysFromNow(x.nextDate)<0),missing=open.filter(x=>!x.nextDate||!x.nextAction),stale=open.filter(x=>x.lastTouch&&Math.floor((new Date(today()+"T00:00:00")-new Date(x.lastTouch+"T00:00:00"))/86400000)>7);
+ const team=TEAM.map(owner=>{
+  const mine=p.filter(x=>x.owner===owner),acts=db.activity.filter(a=>a.owner===owner&&a.date>=plus(-6)&&a.date<=today()),n=t=>acts.filter(a=>a.type===t).length;
+  const leads=n("Client lead"),visits=n("Site visit"),bookings=n("Booking"),cpMeetings=n("Meeting");
+  const gap=leads>0&&visits===0?"Leads not moving to site visits":cpMeetings===0?"No CP meetings logged":acts.length===0?"No recent activity":"Review conversion quality";
+  return {owner,count:mine.length,overdue:mine.filter(x=>x.status!=="Converted"&&x.nextDate&&daysFromNow(x.nextDate)<0).length,missing:mine.filter(x=>x.status!=="Converted"&&(!x.nextDate||!x.nextAction)).length,activities:acts.length,cpMeetings,leads,visits,bookings,gap};
+ });
+ panel.querySelector("#teamExcelHealth").innerHTML='<div class="grid four"><div class="card stat"><small>Overdue follow-ups</small><strong>'+overdue.length+'</strong><span>Need immediate attention</span></div><div class="card stat"><small>Missing next step</small><strong>'+missing.length+'</strong><span>No date or action recorded</span></div><div class="card stat"><small>Stale brokers</small><strong>'+stale.length+'</strong><span>No contact in over 7 days</span></div><div class="card stat"><small>Recent team interactions</small><strong>'+db.activity.filter(a=>a.date>=plus(-6)&&a.date<=today()).length+'</strong><span>Last 7 days</span></div></div>';
+ panel.querySelector("#teamExcelRows").innerHTML=team.map(t=>'<tr><td><strong>'+esc(t.owner)+'</strong><span class="sub">'+t.count+' assigned CPs</span></td><td>'+t.activities+'</td><td>'+t.cpMeetings+'</td><td>'+t.leads+'</td><td>'+t.visits+'</td><td>'+t.bookings+'</td><td><span class="pill '+(t.overdue||t.missing||!t.activities?"red":"green")+'">'+esc(t.gap)+'</span><span class="sub">'+t.overdue+' overdue · '+t.missing+' incomplete records</span></td></tr>').join("");
+ const history=(db.importHistory||[]).slice(-5).reverse();
+ panel.querySelector("#teamExcelHistory").innerHTML=history.map(h=>'<div class="activity"><strong>'+esc(h.file)+' · '+dateLabel(h.date)+'</strong><p>'+h.cpUpdated+' CP updated · '+h.cpCreated+' new · '+h.actAdded+' interactions · '+(h.cpSkipped+h.actSkipped)+' skipped</p></div>').join("")||'<p class="hint">No team workbooks uploaded yet.</p>';
+}
+document.addEventListener("DOMContentLoaded",()=>{
+ const home=document.getElementById("dashboard");if(!home)return;
+ const panel=document.createElement("div");panel.id="teamExcelHub";panel.className="card";panel.style.margin="0 0 14px";
+ panel.innerHTML='<div class="section-title"><div><h2>Team Excel Upload</h2><span class="hint">Your team updates the workbook. You upload once. The dashboard does the rest.</span></div><span class="pill green">ADMIN ONLY</span></div><div class="row" style="flex-wrap:wrap"><button class="primary" onclick="downloadTeamWorkbook()">Download team Excel template</button><input id="teamExcelFile" type="file" accept=".xlsx,.xls,.csv" style="max-width:320px"><button onclick="previewTeamWorkbook()">Preview workbook</button><button class="primary" id="teamExcelImportBtn" onclick="importTeamWorkbook()" disabled>Import team updates</button></div><p id="teamExcelStatus" class="hint">Step 1: share the template with the team. Step 2: collect completed files. Step 3: preview and import. Existing records are matched and updated, not blindly duplicated.</p><div id="teamExcelPreview"></div><div id="teamExcelHealth"></div><div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Team member</th><th>Interactions</th><th>CP meetings</th><th>Client leads</th><th>Site visits</th><th>Bookings</th><th>Where they are lacking</th></tr></thead><tbody id="teamExcelRows"></tbody></table></div><details style="margin-top:12px"><summary style="cursor:pointer;color:var(--muted)">Recent uploads</summary><div id="teamExcelHistory" style="padding-top:10px"></div></details>';
+ const stats=home.querySelector("#stats");home.insertBefore(panel,stats||home.firstChild);
+ const observer=new MutationObserver(()=>{if(isAdmin())renderAdminExcelHub()});observer.observe(document.getElementById("dashboard"),{childList:true,subtree:true});
+ setTimeout(()=>{if(isAdmin())renderAdminExcelHub()},0);
+});
+</script>
+<style>
+#teamExcelHub .grid{margin:10px 0}
+#teamExcelHub .row{margin:8px 0}
+#teamExcelHub .table-wrap table{min-width:820px}
+#teamExcelHub details summary{font-size:12px}
+#teamExcelHub .stat strong{font-size:24px}
+@media(max-width:760px){#teamExcelHub .row>*{width:100%;max-width:none!important}}
+</style>
 </body></html>
