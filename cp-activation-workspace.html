@@ -44,7 +44,7 @@
   <div class="notice">Keep the Contact Person name unchanged when editing the sheet so the system can match the CP. You can update RERA Name, Phone Number, Owner, Status, Priority and Next Follow-up Date.</div>
   <div class="row" style="margin:12px 0;align-items:center;flex-wrap:wrap"><button class="primary" onclick="downloadTeamOwnershipSheet()">Download Excel Sheet</button><input id="teamOwnershipFile" type="file" accept=".xlsx,.xls,.csv" style="max-width:300px"><button class="ghost" onclick="uploadTeamOwnershipSheet()">Upload Updated Sheet</button></div>
   <p id="teamOwnershipStatus" class="hint">Download the current CP list, make your changes in Excel, then upload the revised file to apply them.</p>
-  <div class="table-wrap"><table><thead><tr><th>RERA Name</th><th>Contact Person</th><th>Phone Number</th><th>CP Owner</th><th>Status</th><th>Next Follow-up</th></tr></thead><tbody id="teamOwnershipRows"></tbody></table></div>
+  <div class="table-wrap"><table><thead><tr><th>RERA Name</th><th>Contact Person</th><th>Phone Number</th><th>CP Owner</th><th>Status</th><th>Next Follow-up</th><th>Notes / Remarks</th></tr></thead><tbody id="teamOwnershipRows"></tbody></table></div>
  </div>
 </section>
 <section id="insights" class="view">
@@ -112,7 +112,7 @@ function renderStats(){
  document.getElementById("stats").innerHTML=vals.map(v=>`<div class="card stat"><small>${v[0]}</small><strong>${v[1]}</strong><span>${v[2]}</span></div>`).join("");
 }
 function renderDashboard(){
- let list=sorted().filter(p=>p.status!=="Converted").slice(0,6);
+ let list=sorted();
  document.getElementById("priorityActions").innerHTML=list.length?list.map(p=>`<div class="action-card"><div class="split"><h3>${esc(p.reraName||p.name)} <span class="pill">${esc(p.owner)}</span></h3><span class="sub">Contact Person: ${esc(p.name)}</span>${statusPill(p.status)}</div><p>${esc(recommend(p))}</p><div class="row"><span class="hint">Follow-up: ${dateLabel(p.nextDate)}</span><button class="smallbtn" onclick="logOpen('${p.id}')">Log interaction</button><button class="smallbtn" onclick="editCP('${p.id}')">Open CP</button></div></div>`).join(""):'<div class="empty">No CPs yet. Add your first partner to start the activation workflow.</div>';
  let statuses=["New","Contacted","Meeting Scheduled","Meeting Done","Active","Dormant","Converted"];
  document.getElementById("pipeline").innerHTML=statuses.map(s=>{let n=db.partners.filter(p=>p.status===s).length,pc=db.partners.length?n/db.partners.length*100:0;return `<div style="margin:13px 0"><div class="split"><span>${s}</span><b>${n}</b></div><div class="progress"><i style="width:${pc}%"></i></div></div>`}).join("");
@@ -122,21 +122,20 @@ function renderDashboard(){
 }
 function renderPartners(){
  let q=(document.getElementById("search")?.value||"").toLowerCase(),s=document.getElementById("filterStatus")?.value||"",o=document.getElementById("filterOwner")?.value||"",pr=document.getElementById("filterPriority")?.value||"";
- let ps=sorted().filter(p=>(!q||[p.name,p.company,p.phone,p.market].join(" ").toLowerCase().includes(q))&&(!s||p.status===s)&&(!o||p.owner===o)&&(!pr||p.priority===pr));
+ let ps=sorted().filter(p=>(!q||[p.reraName,p.name,p.company,p.phone,p.market].join(" ").toLowerCase().includes(q))&&(!s||p.status===s)&&(!o||p.owner===o)&&(!pr||p.priority===pr));
  document.getElementById("partnerRows").innerHTML=ps.map(p=>`<tr><td><span class="cpname">RERA Name: ${esc(p.reraName||"Not added")}</span><span class="sub">Contact Person: ${esc(p.name)}</span></td><td>${esc(p.owner)}<span class="sub">${esc(p.priority)}</span></td><td>${statusPill(p.status)}</td><td>${dateLabel(p.lastTouch)}</td><td>${dateLabel(p.nextDate)} ${daysFromNow(p.nextDate)<0?'<span class="pill red">Overdue</span>':""}</td><td><div class="row"><button class="smallbtn" onclick="logOpen('${p.id}')">Log</button><button class="smallbtn" onclick="editCP('${p.id}')">Edit</button><button class="smallbtn" onclick="deleteCP('${p.id}')">Delete</button></div></td></tr>`).join("")||'<tr><td colspan="6" class="empty">No matching CPs.</td></tr>';
 }
 function renderActions(){
- let ps=sorted().filter(p=>p.status!=="Converted");
+ let ps=sorted();
  document.getElementById("actionQueue").innerHTML=ps.length?ps.map(p=>`<div class="action-card"><div class="split"><h3>${esc(p.reraName||p.name)} · ${esc(p.owner)}</h3><span class="sub">Contact Person: ${esc(p.name)}</span><span class="pill ${daysFromNow(p.nextDate)<0?"red":daysFromNow(p.nextDate)===0?"amber":"blue"}">${daysFromNow(p.nextDate)<0?"Overdue":daysFromNow(p.nextDate)===0?"Due today":"Upcoming"}</span></div><p><b>Do now:</b> ${esc(recommend(p))}</p><p class="hint">Next follow-up: ${dateLabel(p.nextDate)} · ${esc(p.market||"Market not captured")}</p><div class="row"><button class="smallbtn" onclick="logOpen('${p.id}')">Log what happened</button><button class="smallbtn" onclick="editCP('${p.id}')">Update plan</button></div></div>`).join(""):'<div class="empty">Nothing in the queue. Add CPs or update follow-up dates.</div>';
 }
 function renderTeam(){
- document.getElementById("teamCards").innerHTML=TEAM.map(t=>{let ps=db.partners.filter(p=>p.owner===t);return `<div class="card teamcard"><div class="split"><h3>${t}</h3><span class="pill">${ps.length} assigned CPs</span></div><div class="big">${ps.filter(p=>p.status==="Active").length} <span class="muted" style="font-size:12px">active</span></div><p class="hint">${ps.filter(p=>daysFromNow(p.nextDate)<=0&&p.status!=="Converted").length} follow-ups due · ${ps.filter(p=>p.status==="Converted").length} converted</p><div class="progress"><i style="width:${ps.length?ps.filter(p=>p.status==="Active"||p.status==="Converted").length/ps.length*100:0}%"></i></div></div>`}).join("");
  const rows=[...db.partners].sort((a,b)=>String(a.reraName||"").localeCompare(String(b.reraName||"")));
- document.getElementById("teamOwnershipRows").innerHTML=rows.map(p=>`<tr><td><strong>${esc(p.reraName||"Not added")}</strong></td><td>${esc(p.name||"")}</td><td>${esc(p.phone||"—")}</td><td><select onchange="changeCPOwner('${p.id}',this.value)"><option value="">Unassigned</option>${TEAM.map(t=>`<option value="${t}" ${p.owner===t?"selected":""}>${t}</option>`).join("")}</select></td><td>${statusPill(p.status)}</td><td>${dateLabel(p.nextDate)}</td></tr>`).join("")||'<tr><td colspan="6" class="empty">No channel partners added yet.</td></tr>';
+ document.getElementById("teamOwnershipRows").innerHTML=rows.map(p=>`<tr><td><strong>${esc(p.reraName||"Not added")}</strong></td><td>${esc(p.name||"")}</td><td>${esc(p.phone||"—")}</td><td><select onchange="changeCPOwner('${p.id}',this.value)"><option value="">Unassigned</option>${TEAM.map(t=>`<option value="${t}" ${p.owner===t?"selected":""}>${t}</option>`).join("")}</select></td><td>${statusPill(p.status)}</td><td>${dateLabel(p.nextDate)}</td><td>${esc(p.notes||"—")}</td></tr>`).join("")||'<tr><td colspan="6" class="empty">No channel partners added yet.</td></tr>';
 }
 function changeCPOwner(id,owner){const p=db.partners.find(x=>x.id===id);if(!p)return;p.owner=owner;save();document.getElementById("teamOwnershipStatus").textContent="Ownership updated for "+(p.reraName||p.name)+"."; }
 async function downloadTeamOwnershipSheet(){
- try{await loadXlsx();const rows=[["RERA Name","Contact Person","Phone Number","Owner","Status","Priority","Next Follow-up Date"],...db.partners.map(p=>[p.reraName||"",p.name||"",p.phone||"",p.owner||"",p.status||"New",p.priority||"",p.nextDate||""])];
+ try{await loadXlsx();const rows=[["RERA Name","Contact Person","Phone Number","Owner","Status","Priority","Next Follow-up Date","Notes / Remarks"],...db.partners.map(p=>[p.reraName||"",p.name||"",p.phone||"",p.owner||"",p.status||"New",p.priority||"",p.nextDate||"",p.notes||""])];
  const ws=XLSX.utils.aoa_to_sheet(rows),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"CP Ownership");XLSX.writeFile(wb,"CP_Team_Ownership.xlsx");
  }catch(e){document.getElementById("teamOwnershipStatus").textContent="Could not create Excel file: "+e.message}
 }
@@ -154,7 +153,8 @@ async function uploadTeamOwnershipSheet(){
  if(rera)p.reraName=rera;
  const s=String(getCell(row,["Status","CP Status"])||"").trim();if(s)p.status=s;
  const priority=String(getCell(row,["Priority","CP Priority"])||"").trim();if(priority)p.priority=priority;
- const next= getCell(row,["Next Follow-up Date","Next Follow Up","Next Date"]);if(next){let d=next instanceof Date?next.toISOString().slice(0,10):String(next).trim();if(typeof next==="number"&&XLSX.SSF){const x=XLSX.SSF.parse_date_code(next);if(x?.y)d=new Date(Date.UTC(x.y,x.m-1,x.d)).toISOString().slice(0,10)}else if(!/^\d{4}-\d{2}-\d{2}$/.test(d)){const parsed=new Date(d);if(!isNaN(parsed))d=parsed.toISOString().slice(0,10)}if(/^\d{4}-\d{2}-\d{2}$/.test(d))p.nextDate=d}
+ const remarks=String(getCell(row,["Notes / Remarks","Notes","Remarks"])||"").trim();if(remarks)p.notes=remarks;
+  const next= getCell(row,["Next Follow-up Date","Next Follow Up","Next Date"]);if(next){let d=next instanceof Date?next.toISOString().slice(0,10):String(next).trim();if(typeof next==="number"&&XLSX.SSF){const x=XLSX.SSF.parse_date_code(next);if(x?.y)d=new Date(Date.UTC(x.y,x.m-1,x.d)).toISOString().slice(0,10)}else if(!/^\d{4}-\d{2}-\d{2}$/.test(d)){const parsed=new Date(d);if(!isNaN(parsed))d=parsed.toISOString().slice(0,10)}if(/^\d{4}-\d{2}-\d{2}$/.test(d))p.nextDate=d}
  updated++;
  });
  save();status.textContent="Updated "+updated+" CP records. "+notFound+" rows did not match an existing CP; "+invalid+" rows were skipped. No unmatched CPs were created.";
@@ -222,7 +222,7 @@ function renderInsights(){
  const visibleIds=new Set(db.partners.map(p=>p.id));
  const meetings=(db.meetings||[]).filter(m=>visibleIds.has(m.cpId));
  const acts=db.activity.filter(a=>visibleIds.has(a.cpId));
- const due=sorted().filter(p=>p.status!=="Converted").slice(0,8);
+ const due=sorted();
  document.getElementById("nbaRows").innerHTML=due.map(p=>'<div class="action-card"><b>'+esc(p.reraName||p.name)+'</b><div class="hint">Contact Person: '+esc(p.name)+'</div><p>'+esc(recommend(p))+'</p><span class="hint">'+esc(p.owner)+' · Follow-up '+dateLabel(p.nextDate)+'</span></div>').join("")||'<p class="muted">Add CPs or meeting records to generate next actions.</p>';
  const dormant=db.partners.filter(p=>p.status!=="Converted"&&p.status!=="Dormant"&&daysFromNow(p.lastTouch||p.nextDate)<=-15).sort((a,b)=>daysFromNow(a.lastTouch)-daysFromNow(b.lastTouch));
  const alreadyDormant=db.partners.filter(p=>p.status==="Dormant"),dorm=[...alreadyDormant,...dormant].slice(0,10);
@@ -324,7 +324,6 @@ renderTeam=function(){
  if(!currentUser)return;
  if(isAdmin()){baseRenderTeam();return}
  const all=db.partners;db.partners=scopedPartners();baseRenderTeam();db.partners=all;
- document.getElementById("teamCards").innerHTML=`<div class="card teamcard"><h3>My CP portfolio</h3><div class="big">${db.partners.filter(p=>p.owner===currentUser.name).length} <span class="muted" style="font-size:12px">assigned CPs</span></div><p class="hint">You can view and manage only your assigned partners.</p></div>`;
 };
 // Team members can only assign new CPs to themselves.
 const baseEditCP=editCP;
