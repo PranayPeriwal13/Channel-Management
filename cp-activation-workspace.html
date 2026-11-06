@@ -191,7 +191,7 @@ async function uploadTeamOwnershipSheet(){
  }catch(e){status.textContent="Upload failed: "+e.message}
 }
 function renderTimeline(){let a=[["Day 0","First call"],["Day 1","WhatsApp details"],["Day 3","Follow-up call"],["Day 5","Personal meeting"],["Day 7","Project presentation"],["Day 10","Inventory update"],["Day 15","Client requirement"],["Day 20","Client meeting"],["Day 30","Review & classify"]];document.getElementById("timeline").innerHTML=a.map(x=>`<div class="activity"><strong>${x[0]}</strong><p>${x[1]}</p></div>`).join("")}
-function renderAll(){renderStats();renderDashboard();renderPartners();renderActions();renderTeam();renderInsights()}
+function renderAll(){renderStats();renderDashboard();renderPartners();renderActions();renderTeam();renderMeetingReport()}
 document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(b.dataset.tab).classList.add("active")}));
 function openAdd(){document.getElementById("cpForm").reset();document.getElementById("cpId").value="";document.getElementById("modalTitle").textContent="Add channel partner";document.getElementById("nextDate").value=plus(1);document.getElementById("lastTouch").value=today();document.getElementById("cpModal").classList.add("show")}
 function closeModal(){document.getElementById("cpModal").classList.remove("show")}
